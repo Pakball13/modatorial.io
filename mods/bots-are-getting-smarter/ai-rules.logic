@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "settings": {
+    "decisionIntervalMs": 400,
+    "debugLog": true,
+    "logEveryDecision": false
+  },
+  "rules": [
+    {
+      "name": "🛡️ Defend — enemy ship incoming",
+      "priority": 100,
+      "if": "hasIncomingShip && myEconomy > 30",
+      "then": { "action": "defend", "percent": 60 }
+    },
+    {
+      "name": "⚔️ Finish off dying neighbor",
+      "priority": 95,
+      "if": "weakestNeighbor && weakestNeighbor.territory < 10 && weakestNeighbor.economy > 0 && myEconomy > 25",
+      "then": { "action": "attack", "target": "weakestNeighbor", "percent": 80 }
+    },
+    {
+      "name": "⚔️ Attack poor neighbor (economy 1–100)",
+      "priority": 85,
+      "if": "weakestNeighbor && weakestNeighbor.economy >= 1 && weakestNeighbor.economy <= 100 && myEconomy > 40",
+      "then": { "action": "attack", "target": "weakestNeighbor", "percent": 50 }
+    },
+    {
+      "name": "⚔️ Crush 2x-weaker neighbor",
+      "priority": 75,
+      "if": "weakestNeighbor && weakestNeighbor.economy > 0 && weakestNeighbor.economy * 2 < myEconomy && myEconomy > 80",
+      "then": { "action": "attack", "target": "weakestNeighbor", "percent": 65 }
+    },
+    {
+      "name": "🌱 Claim free land (lots available)",
+      "priority": 70,
+      "if": "neutralAdjacent > 3 && myEconomy > 15",
+      "then": { "action": "expand", "percent": 70 }
+    },
+    {
+      "name": "🌱 Claim free land (some available)",
+      "priority": 55,
+      "if": "neutralAdjacent > 0 && myEconomy > 40",
+      "then": { "action": "expand", "percent": 50 }
+    },
+    {
+      "name": "⚔️ Punish strongest if I'm ahead",
+      "priority": 45,
+      "if": "strongestNeighbor && strongestNeighbor.economy > 0 && myEconomy > strongestNeighbor.economy * 3",
+      "then": { "action": "attack", "target": "strongestNeighbor", "percent": 60 }
+    },
+    {
+      "name": "🛡️ Surrounded by stronger — turtle",
+      "priority": 30,
+      "if": "neighborCount > 2 && myEconomy < 60",
+      "then": { "action": "idle" }
+    },
+    {
+      "name": "🛡️ Very low troops — hold",
+      "priority": 20,
+      "if": "myEconomy < 25",
+      "then": { "action": "idle" }
+    }
+  ]
+}

@@ -1,9 +1,9 @@
 {
   "id": "bots-are-getting-smarter",
   "name": "Bots Are Getting Smarter",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "Modatorial",
-  "description": "Phase 1: captures bot decision data as training samples. Export as JSON, train offline, then load a policy back in.",
+  "description": "4-layer neural net that learns bot behaviour live and plays back with a trained policy. No Python, no install — trains in your browser.",
   "gameVersion": 25,
   "main": "main.js",
   "settings": [
@@ -11,28 +11,38 @@
       "id": "captureEnabled",
       "type": "toggle",
       "label": "Capture bot decisions",
-      "description": "Record (state, action) pairs while you play",
       "default": true
     },
     {
-      "id": "captureRate",
-      "type": "slider",
-      "label": "Capture every N decisions",
-      "description": "1 = every decision (heavy), 50 = sparse sample",
-      "min": 1, "max": 50, "step": 1, "default": 10
+      "id": "trainEnabled",
+      "type": "toggle",
+      "label": "Train the network live",
+      "default": true
     },
     {
-      "id": "captureHumansToo",
+      "id": "applyPolicy",
       "type": "toggle",
-      "label": "Also capture human players",
-      "description": "Records your own decisions too (useful for imitation learning)",
+      "label": "Bots use the trained policy",
+      "description": "Off = pure capture mode. On = bots use the net.",
       "default": false
+    },
+    {
+      "id": "learningRate",
+      "type": "slider",
+      "label": "Learning rate (×0.001)",
+      "min": 1, "max": 50, "step": 1, "default": 3
     },
     {
       "id": "showHud",
       "type": "toggle",
-      "label": "Show capture HUD",
+      "label": "Show AI HUD",
       "default": true
+    },
+    {
+      "id": "resetNetwork",
+      "type": "button",
+      "label": "Reset network",
+      "buttonLabel": "Reset weights & buffer"
     }
   ]
 }

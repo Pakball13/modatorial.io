@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "name": "Certain Rules — Startup Doctrine",
+  "author": "Pakball13",
+  "description": "AI opening book. Runs once per match start, in priority order. After these fire, normal ai-rules.logic takes over.",
+
+  "economyBrain": {
+    "mode": "aggressive-expand",
+    "openingFullSendPercent": 100,
+    "minTroopsToAttack": 40,
+    "minTroopsToExpand": 15,
+    "reinvestRatio": 0.0
+  },
+
+  "lives": {
+    "total": 3,
+    "onDeath": "respawnOrDisable",
+    "surrenderBelowTerritory": 5,
+    "surrenderBelowTroops": 8,
+    "giveUpWhenLives": 0
+  },
+
+  "startup": [
+    {
+      "id": "point-nemo",
+      "name": "🗺️ Start at Point Nemo",
+      "priority": 200,
+      "phase": "spawn",
+      "action": "spawnFarthestFromPlayers",
+      "description": "During spawn selection, pick the tile on the map farthest from every other player's capital. If the spawn selection fails, do nothing and let the game auto-place us.",
+      "params": {
+        "minDistanceFromEdge": 8,
+        "scanStep": 3,
+        "avoidCorners": true
+      }
+    },
+
+    {
+      "id": "double-full-send",
+      "name": "⚔️ Opening: 2 Full Sends to Empty Land",
+      "priority": 190,
+      "phase": "earlyGame",
+      "action": "expand",
+      "percent": 100,
+      "maxTimes": 2,
+      "delayMs": 500,
+      "condition": "myTerritory < 400 && neutralAdjacent > 0",
+      "description": "The moment we've spawned, fire two 100% expansions into neutral land with a half-second gap."
+    },
+
+    {
+      "id": "second-wave-expand",
+      "name": "⚔️ Second Wave: 2 More Full Sends",
+      "priority": 180,
+      "phase": "earlyGame",
+      "action": "expand",
+      "percent": 100,
+      "maxTimes": 2,
+      "delayMs": 600,
+      "condition": "myTerritory < 600 && neutralAdjacent > 3",
+      "description": "If we still have room after the first two sends, do it again."
+    },
+
+    {
+      "id": "first-blood",
+      "name": "🩸 First Blood — kill the weakest",
+      "priority": 170,
+      "phase": "earlyGame",
+      "action": "attack",
+      "target": "weakestNeighbor",
+      "percent": 100,
+      "maxTimes": 1,
+      "condition": "myEconomy > 80 && weakestNeighbor && weakestNeighbor.economy < 20",
+      "description": "One 100% full send at the weakest neighbor if we're already strong."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "network": {
+    "inputSize": 48,
+    "layers": [128, 128, 64, 2],
+    "activation": "relu",
+    "outputActivation": "sigmoid"
+  },
+  "training": {
+    "learningRate": 0.003,
+    "batchSize": 64,
+    "minBufferBeforeTrain": 200,
+    "trainIntervalMs": 400,
+    "bufferMaxSize": 20000
+  },
+  "features": [
+    "myStrength", "myTerritoryRatio", "myDifficulty", "myIsHuman",
+    "n0_strRatio", "n0_territory", "n0_isHuman", "n0_sameTeam", "n0_present",
+    "n1_strRatio", "n1_territory", "n1_isHuman", "n1_sameTeam", "n1_present",
+    "n2_strRatio", "n2_territory", "n2_isHuman", "n2_sameTeam", "n2_present",
+    "n3_strRatio", "n3_territory", "n3_isHuman", "n3_sameTeam", "n3_present",
+    "n4_strRatio", "n4_territory", "n4_isHuman", "n4_sameTeam", "n4_present",
+    "n5_strRatio", "n5_territory", "n5_isHuman", "n5_sameTeam", "n5_present",
+    "n6_strRatio", "n6_territory", "n6_isHuman", "n6_sameTeam", "n6_present",
+    "n7_strRatio", "n7_territory", "n7_isHuman", "n7_sameTeam", "n7_present",
+    "aliveRatio", "humanRatio", "teamCountRatio", "gameMode"
+  ]
+}
