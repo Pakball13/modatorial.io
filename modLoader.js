@@ -35,7 +35,7 @@
     'Name':            ICON_DIR + 'name.svg'
   };
 
-  const THEMES = ['modatorial', 'midnight', 'cyberpunk', 'forest', 'mono', 'sunset'];
+ const THEMES = ['modatorial', 'midnight', 'cyberpunk', 'forest', 'mono', 'sunset', 'raw']; 
   function applyTheme(name) {
     if (!THEMES.includes(name)) name = 'midnight';
     document.documentElement.setAttribute('data-tt-theme', name);

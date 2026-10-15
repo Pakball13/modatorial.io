@@ -1,19 +1,16 @@
 /* ============================================================
- * indev-mode.js — hidden "developer mode" toggle  v1.0
+ * indev-mode.js — hidden "raw HTML" trigger  v3.0
  *
  * ── SECRET ──────────────────────────────────────────────────
- * The avatar picker gets one extra ⭐ tile appended to the end
- * of the emoji grid. It looks identical to the existing star.
+ * The avatar picker gets one extra ⭐ tile. It looks identical
+ * to the existing star.
  *
- *   • normal click  → sets ⭐ as your avatar (like any emoji)
- *   • LONG-PRESS    → 700ms hold toggles indev mode
+ *   • normal click  → sets ⭐ as your avatar
+ *   • LONG-PRESS    → 700ms hold toggles raw theme
  *
- * ── INDEV MODE EFFECTS ──────────────────────────────────────
- *   • hides the Modatorial chrome bar
- *   • hides the Mods / Store / Appearance menu buttons
- *   • disables css/themes.css and css/client.css
- *   • removes the active theme
- *   • shows a small magenta "INDEV" badge
+ * ── RAW THEME ───────────────────────────────────────────────
+ * Sets <html data-tt-theme="raw"> which activates css/raw.css.
+ * The whole client is restyled as plain, unstyled HTML.
  *
  * ── EXIT ────────────────────────────────────────────────────
  * Click the INDEV badge 5× within 1.2 seconds,
@@ -22,131 +19,66 @@
 (function (global) {
   'use strict';
 
-  const INDEV_KEY     = 'tt-indev-mode';
-  const CHROME_KEY    = 'tt-chrome-hidden';
   const LONG_PRESS_MS = 700;
   const SECRET_EMOJI  = '⭐';
-
-  /* DOM ids to keep hidden while indev mode is on */
-  const HIDE_IDS = [
-    'tt-chrome',
-    'tt-mods-btn',
-    'tt-store-btn',
-    'tt-appearance-btn',
-    'tt-transition'
-  ];
+  const RAW_THEME     = 'raw';
+  const PREV_KEY      = 'tt-indev-prev-theme';
 
   const log = (...a) => console.log('%c[Indev]', 'color:#f0f;font-weight:bold', ...a);
 
-  /* ── State ─────────────────────────────────────────────── */
+  /* ── Is raw theme on? ─────────────────────────────────── */
   function isActive() {
-    try { return localStorage.getItem(INDEV_KEY) === '1'; }
-    catch { return false; }
+    return document.documentElement.getAttribute('data-tt-theme') === RAW_THEME;
   }
 
-  /* ── Effects ───────────────────────────────────────────── */
-  function hideEl(id) {
-    const el = document.getElementById(id);
-    if (el) el.style.setProperty('display', 'none', 'important');
-  }
+  /* ── Enable / disable ─────────────────────────────────── */
+  function enable() {
+    /* Remember whatever theme was active before, so we can restore it */
+    try {
+      const current = localStorage.getItem('tt-theme') || 'modatorial';
+      if (current !== RAW_THEME) localStorage.setItem(PREV_KEY, current);
+    } catch {}
 
-  function disableSheets(disabled) {
-    document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-      const href = link.href || '';
-      if (href.indexOf('themes.css') !== -1 ||
-          href.indexOf('client.css') !== -1) {
-        link.disabled = disabled;
-      }
-    });
-  }
-
-  function applyEffects() {
-    if (!isActive()) return;
-
-    document.documentElement.setAttribute('data-tt-indev', '1');
-
-    /* Strip the Modatorial skin */
-    disableSheets(true);
-
-    /* No theme attribute — pure unstyled */
-    try { document.documentElement.removeAttribute('data-tt-theme'); } catch {}
-
-    /* Hide chrome + injected buttons */
-    HIDE_IDS.forEach(hideEl);
+    if (global.TerritorialMods && global.TerritorialMods.setTheme) {
+      global.TerritorialMods.setTheme(RAW_THEME);
+    } else {
+      document.documentElement.setAttribute('data-tt-theme', RAW_THEME);
+      try { localStorage.setItem('tt-theme', RAW_THEME); } catch {}
+    }
 
     ensureBadge();
-
-    log('INDEV MODE active');
-  }
-
-  function removeEffects() {
-    document.documentElement.removeAttribute('data-tt-indev');
-    disableSheets(false);
-
-    ['tt-mods-btn', 'tt-store-btn', 'tt-appearance-btn', 'tt-transition'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = '';
-    });
-
-    try { localStorage.removeItem(CHROME_KEY); } catch {}
-    const chrome = document.getElementById('tt-chrome');
-    if (chrome) chrome.style.display = '';
-
-    const badge = document.getElementById('tt-indev-badge');
-    if (badge) badge.remove();
-
-    log('INDEV MODE off');
-  }
-
-  /* ── Toggle ────────────────────────────────────────────── */
-  function enable(opts) {
-    opts = opts || {};
-    try {
-      localStorage.setItem(INDEV_KEY, '1');
-      localStorage.setItem(CHROME_KEY, '1');
-      if (opts.disableMods) {
-        const ids = (global.TerritorialMods && global.TerritorialMods.mods)
-          ? [...global.TerritorialMods.mods.keys()] : [];
-        localStorage.setItem('tt-disabled-mods', JSON.stringify(ids));
-      }
-    } catch {}
-    applyEffects();
-    /* Reload so the whole client boots without the chrome/skin */
-    setTimeout(() => location.reload(), 400);
+    log('Raw theme active — click the INDEV badge 5× to exit');
   }
 
   function disable() {
+    let prev = 'modatorial';
     try {
-      localStorage.removeItem(INDEV_KEY);
-      localStorage.removeItem(CHROME_KEY);
+      prev = localStorage.getItem(PREV_KEY) || 'modatorial';
+      localStorage.removeItem(PREV_KEY);
     } catch {}
-    removeEffects();
-    setTimeout(() => location.reload(), 400);
+
+    if (global.TerritorialMods && global.TerritorialMods.setTheme) {
+      global.TerritorialMods.setTheme(prev);
+    } else {
+      document.documentElement.setAttribute('data-tt-theme', prev);
+      try { localStorage.setItem('tt-theme', prev); } catch {}
+    }
+
+    const badge = document.getElementById('tt-indev-badge');
+    if (badge) badge.remove();
+    log('Exited raw theme → back to ' + prev);
   }
 
-  function toggle() { if (isActive()) disable(); else enable(); }
+  function toggle() { isActive() ? disable() : enable(); }
 
-  /* ── INDEV badge (escape hatch) ────────────────────────── */
+  /* ── INDEV escape badge ───────────────────────────────── */
   function ensureBadge() {
     if (document.getElementById('tt-indev-badge')) return;
 
     const b = document.createElement('div');
     b.id = 'tt-indev-badge';
     b.textContent = 'INDEV';
-    b.title = 'Click 5× quickly to exit indev mode';
-    Object.assign(b.style, {
-      position: 'fixed', top: '8px', left: '8px',
-      padding: '4px 10px',
-      background: 'rgba(255,0,255,.14)',
-      border: '1px solid #f0f',
-      color: '#f0f',
-      font: '700 10px system-ui',
-      letterSpacing: '1px',
-      borderRadius: '4px',
-      zIndex: 2147483000,
-      cursor: 'pointer',
-      userSelect: 'none'
-    });
+    b.title = 'Click 5× quickly to exit raw mode';
 
     let clicks = 0, timer = null;
     b.onclick = () => {
@@ -159,19 +91,8 @@
     document.body.appendChild(b);
   }
 
-  /* ── MutationObserver — keep things hidden ─────────────── */
-  function startHideObserver() {
-    const obs = new MutationObserver(() => {
-      if (!isActive()) return;
-      HIDE_IDS.forEach(hideEl);
-      if (!document.getElementById('tt-indev-badge')) ensureBadge();
-    });
-    obs.observe(document.documentElement, { childList: true, subtree: true });
-  }
-
-  /* ── Secret tile in the avatar picker ──────────────────── */
+  /* ── Secret tile inside the avatar picker ─────────────── */
   function injectSecretTile(modal) {
-    /* Try both known ids (new avatars.js + old avatar-picker.js) */
     const grid =
       modal.querySelector('#tt-avatar-emoji') ||
       modal.querySelector('#tt-avatar-emojis') ||
@@ -183,7 +104,6 @@
     t.className = 'tile';
     t.dataset.ttSecret = '1';
     t.textContent = SECRET_EMOJI;
-    t.title = '';   /* look normal */
 
     let pressTimer = null;
     let justLongPressed = false;
@@ -193,30 +113,25 @@
       clearTimeout(pressTimer);
       pressTimer = setTimeout(() => {
         justLongPressed = true;
-        /* visual flash so the user knows they hit something */
-        t.style.transition = 'border-color .15s, box-shadow .15s';
         t.style.borderColor = '#f0f';
         t.style.boxShadow = '0 0 0 2px rgba(255,0,255,.45), 0 0 16px rgba(255,0,255,.45)';
         setTimeout(() => {
           t.style.borderColor = '';
           t.style.boxShadow = '';
         }, 700);
-        log('Secret tile fired — toggling indev mode');
+        log('Secret tile fired — switching to raw theme');
         toggle();
       }, LONG_PRESS_MS);
     };
-
     const cancelPress = () => clearTimeout(pressTimer);
 
-    t.addEventListener('mousedown',  startPress);
-    t.addEventListener('mouseup',    cancelPress);
-    t.addEventListener('mouseleave', cancelPress);
-    t.addEventListener('touchstart', startPress, { passive: true });
-    t.addEventListener('touchend',   cancelPress);
-    t.addEventListener('touchcancel',cancelPress);
+    t.addEventListener('mousedown',   startPress);
+    t.addEventListener('mouseup',     cancelPress);
+    t.addEventListener('mouseleave',  cancelPress);
+    t.addEventListener('touchstart',  startPress, { passive: true });
+    t.addEventListener('touchend',    cancelPress);
+    t.addEventListener('touchcancel', cancelPress);
 
-    /* Normal click → sets ⭐ as your avatar. Suppressed after a
-       long press so both actions don't fire on the same gesture. */
     t.addEventListener('click', e => {
       if (justLongPressed) {
         e.stopPropagation();
@@ -246,26 +161,23 @@
       if (!modal) return;
       if (modal.dataset.ttSecretInjected === '1') return;
       modal.dataset.ttSecretInjected = '1';
-      /* let the emoji grid finish rendering first */
       setTimeout(() => injectSecretTile(modal), 0);
     });
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  /* ── Boot ──────────────────────────────────────────────── */
+  /* ── Boot ─────────────────────────────────────────────── */
   function boot() {
     const existingModal = document.getElementById('tt-avatar-modal');
     if (existingModal) {
       existingModal.dataset.ttSecretInjected = '1';
       injectSecretTile(existingModal);
     }
-
     startAvatarWatcher();
 
-    if (isActive()) {
-      applyEffects();
-      startHideObserver();
-    }
+    /* If the page already booted into raw theme, make sure the
+       badge is present so the user can escape. */
+    if (isActive()) ensureBadge();
 
     log('Ready — long-press the extra ⭐ in the avatar picker');
   }
@@ -282,7 +194,6 @@
     enable,
     disable,
     toggle,
-    /* manual trigger — same as long-press */
     trigger: toggle
   };
 })(window);

@@ -481,12 +481,14 @@
     return '<div style="display:flex;gap:16px;align-items:center;' +
       'padding:16px;background:#0d1117;border-radius:10px;' +
       'border:1px solid #262a31">' +
-        '<div style="width:64px;height:64px;border-radius:50%;' +
-        'background:linear-gradient(135deg,#238636,#3fb950);' +
-        'display:flex;align-items:center;justify-content:center;' +
-        'font:700 24px system-ui;color:#fff;flex-shrink:0">' +
-          escapeHtml(initial) +
-        '</div>' +
+        (window.Avatars
+          ? window.Avatars.html(user, { size: 64, clickable: true })
+          : '<div style="width:64px;height:64px;border-radius:50%;' +
+            'background:linear-gradient(135deg,#238636,#3fb950);' +
+            'display:flex;align-items:center;justify-content:center;' +
+            'font:700 24px system-ui;color:#fff;flex-shrink:0">' +
+              escapeHtml(initial) +
+            '</div>') +
         '<div style="flex:1;min-width:0">' +
           '<div style="font:700 16px system-ui;margin-bottom:2px">' +
             escapeHtml(user.displayName || 'Unnamed') +
@@ -645,6 +647,10 @@
         overlay.remove();
         refreshAccountModal();
       } catch (e) { Toast('❌ ' + e.message); }
+          /* Wire up any avatars that need to open the picker */
+    if (window.Avatars && window.Avatars.wireClicks) {
+      window.Avatars.wireClicks(body);
+    }
     };
   }
 

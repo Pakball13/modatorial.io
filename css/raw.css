@@ -1,0 +1,288 @@
+/* ============================================================
+ * raw.css — "raw HTML" theme
+ * Activates when <html data-tt-theme="raw">.
+ * Strips the whole Modatorial UI down to browser defaults:
+ * Times New Roman, black on white, blue links, default buttons,
+ * zero border-radius, zero shadows, zero gradients.
+ * ============================================================ */
+
+/* ── Theme variables ────────────────────────────────────── */
+html[data-tt-theme="raw"] {
+  --tt-accent:     #0000EE;
+  --tt-accent-2:   #0000EE;
+  --tt-background: #ffffff;
+  --tt-bg:         #ffffff;
+  --tt-text:       #000000;
+  --tt-text-dim:   #555555;
+  --tt-card:       #ffffff;
+  --tt-border:     #000000;
+  --tt-surface:    #ffffff;
+  --tt-emerald:    #0000EE;
+  --tt-mint:       #0000EE;
+  --tt-font:       "Times New Roman", Times, serif;
+}
+
+/* ── Page base ──────────────────────────────────────────── */
+html[data-tt-theme="raw"],
+html[data-tt-theme="raw"] body {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+/* ── Every element in the tt- namespace ────────────────── */
+html[data-tt-theme="raw"] [id^="tt-"],
+html[data-tt-theme="raw"] [class^="tt-"] {
+  font-family: "Times New Roman", Times, serif !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: none !important;
+}
+
+/* ── Chrome bar ─────────────────────────────────────────── */
+html[data-tt-theme="raw"] #tt-chrome {
+  background: #f0f0f0 !important;
+  background-image: none !important;
+  border-bottom: 1px solid #808080 !important;
+  color: #000000 !important;
+  height: 30px !important;
+  padding: 0 6px !important;
+  gap: 6px !important;
+}
+html[data-tt-theme="raw"] #tt-chrome > div,
+html[data-tt-theme="raw"] #tt-chrome > div span {
+  color: #000000 !important;
+}
+html[data-tt-theme="raw"] #tt-chrome > div > span {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  color: #000000 !important;
+}
+
+/* ── Buttons (chrome bar + top-right stack + everywhere) ─ */
+html[data-tt-theme="raw"] #tt-chrome button,
+html[data-tt-theme="raw"] #tt-topright-stack button,
+html[data-tt-theme="raw"] [id^="tt-"] button,
+html[data-tt-theme="raw"] [class^="tt-"] button {
+  background: ButtonFace !important;
+  background-image: none !important;
+  color: ButtonText !important;
+  border: 2px outset ButtonFace !important;
+  border-radius: 0 !important;
+  padding: 1px 6px !important;
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: normal !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+html[data-tt-theme="raw"] #tt-chrome button:active,
+html[data-tt-theme="raw"] #tt-topright-stack button:active,
+html[data-tt-theme="raw"] [id^="tt-"] button:active {
+  border-style: inset !important;
+}
+
+/* ── Injected main-menu buttons (Mods / Store / Appearance) ── */
+html[data-tt-theme="raw"] #tt-mods-btn,
+html[data-tt-theme="raw"] #tt-store-btn,
+html[data-tt-theme="raw"] #tt-appearance-btn {
+  background: ButtonFace !important;
+  background-image: none !important;
+  color: ButtonText !important;
+  border: 2px outset ButtonFace !important;
+  border-radius: 0 !important;
+  font: 400 13.3333px "Times New Roman", Times, serif !important;
+  padding: 1px 6px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: normal !important;
+  text-align: center !important;
+}
+html[data-tt-theme="raw"] #tt-mods-btn:active,
+html[data-tt-theme="raw"] #tt-store-btn:active,
+html[data-tt-theme="raw"] #tt-appearance-btn:active {
+  border-style: inset !important;
+}
+
+/* ── The game's own recolored menu buttons ───────────────── */
+html[data-tt-theme="raw"] body > button[data-tt-menu-btn="1"] {
+  background: ButtonFace !important;
+  background-image: none !important;
+  color: ButtonText !important;
+  border: 2px outset ButtonFace !important;
+  border-radius: 0 !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+html[data-tt-theme="raw"] body > button[data-tt-menu-btn="1"]:active {
+  border-style: inset !important;
+}
+
+/* ── Modal overlays stay dimmed ─────────────────────────── */
+html[data-tt-theme="raw"] #tt-account-modal,
+html[data-tt-theme="raw"] #tt-avatar-modal,
+html[data-tt-theme="raw"] #tt-store-modal,
+html[data-tt-theme="raw"] #tt-settings-modal,
+html[data-tt-theme="raw"] #tt-appearance-modal,
+html[data-tt-theme="raw"] #tt-modmenu,
+html[data-tt-theme="raw"] [id^="tt-"][id$="-modal"] {
+  background: rgba(0,0,0,0.7) !important;
+}
+
+/* ── Inner panels → plain white card ────────────────────── */
+html[data-tt-theme="raw"] #tt-account-modal > div,
+html[data-tt-theme="raw"] #tt-avatar-modal > div,
+html[data-tt-theme="raw"] #tt-store-modal > div,
+html[data-tt-theme="raw"] #tt-settings-modal > div,
+html[data-tt-theme="raw"] #tt-appearance-modal > div,
+html[data-tt-theme="raw"] #tt-modmenu > div,
+html[data-tt-theme="raw"] [id^="tt-"][id$="-modal"] > div {
+  background: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid #000000 !important;
+  color: #000000 !important;
+  padding: 12px !important;
+}
+
+/* ── Everything inside those panels (except buttons/inputs) ── */
+html[data-tt-theme="raw"] #tt-account-modal > div *,
+html[data-tt-theme="raw"] #tt-avatar-modal > div *,
+html[data-tt-theme="raw"] #tt-store-modal > div *,
+html[data-tt-theme="raw"] #tt-settings-modal > div *,
+html[data-tt-theme="raw"] #tt-appearance-modal > div *,
+html[data-tt-theme="raw"] #tt-modmenu > div * {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+/* …but buttons and inputs keep their own widget rules below */
+html[data-tt-theme="raw"] [id^="tt-"] button,
+html[data-tt-theme="raw"] [id^="tt-"] input,
+html[data-tt-theme="raw"] [id^="tt-"] textarea,
+html[data-tt-theme="raw"] [id^="tt-"] select {
+  background: ButtonFace !important;
+  background-image: none !important;
+  color: ButtonText !important;
+  border: 2px outset ButtonFace !important;
+  border-radius: 0 !important;
+  padding: 1px 6px !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+html[data-tt-theme="raw"] [id^="tt-"] input[type="text"],
+html[data-tt-theme="raw"] [id^="tt-"] input[type="email"],
+html[data-tt-theme="raw"] [id^="tt-"] input[type="password"],
+html[data-tt-theme="raw"] [id^="tt-"] input[type="search"],
+html[data-tt-theme="raw"] [id^="tt-"] input[type="tel"],
+html[data-tt-theme="raw"] [id^="tt-"] input[type="number"],
+html[data-tt-theme="raw"] [id^="tt-"] textarea,
+html[data-tt-theme="raw"] [id^="tt-"] select {
+  background: Field !important;
+  color: FieldText !important;
+  border: 2px inset ButtonFace !important;
+  padding: 1px 2px !important;
+}
+
+/* ── Avatar image tiles in the picker ───────────────────── */
+html[data-tt-theme="raw"] #tt-avatar-modal .tile,
+html[data-tt-theme="raw"] [id^="tt-avatar"] .tile {
+  background: ButtonFace !important;
+  background-image: none !important;
+  border: 2px outset ButtonFace !important;
+  border-radius: 0 !important;
+  color: ButtonText !important;
+}
+html[data-tt-theme="raw"] #tt-avatar-modal .tile.active {
+  border-style: inset !important;
+  outline: 1px solid #000 !important;
+}
+
+/* ── Mod store cards / mod-manager cards ────────────────── */
+html[data-tt-theme="raw"] [class*="tt-mod-card"],
+html[data-tt-theme="raw"] [class*="tt-store-card"],
+html[data-tt-theme="raw"] [class*="tt-detail"],
+html[data-tt-theme="raw"] .tt-store-shell {
+  background: #ffffff !important;
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-tt-theme="raw"] [class*="tt-mod-emoji"],
+html[data-tt-theme="raw"] [class*="tt-detail-emoji"] {
+  background: #ffffff !important;
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+}
+
+/* ── Sidebar categories ─────────────────────────────────── */
+html[data-tt-theme="raw"] .tt-store-sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid #000 !important;
+}
+html[data-tt-theme="raw"] .tt-store-sidebar .cat {
+  background: #ffffff !important;
+  color: #000 !important;
+  border-radius: 0 !important;
+  padding: 2px 4px !important;
+}
+html[data-tt-theme="raw"] .tt-store-sidebar .cat.active {
+  background: #000080 !important;
+  color: #ffffff !important;
+}
+
+/* ── Toasts ─────────────────────────────────────────────── */
+html[data-tt-theme="raw"] [class*="toast"],
+html[data-tt-theme="raw"] .tt-toast {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+/* ── Links everywhere ───────────────────────────────────── */
+html[data-tt-theme="raw"] a {
+  color: #0000EE !important;
+  text-decoration: underline !important;
+}
+html[data-tt-theme="raw"] a:visited {
+  color: #551A8B !important;
+}
+
+/* ── Horizontal separators in modals ────────────────────── */
+html[data-tt-theme="raw"] hr {
+  border: 0 !important;
+  border-top: 1px solid #808080 !important;
+  margin: 8px 0 !important;
+}
+
+/* ── INDEV escape hatch badge ───────────────────────────── */
+html[data-tt-theme="raw"] #tt-indev-badge {
+  position: fixed !important;
+  top: 34px !important;
+  left: 6px !important;
+  padding: 1px 6px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  font: bold 11px "Times New Roman", Times, serif !important;
+  cursor: pointer !important;
+  z-index: 2147483000 !important;
+  user-select: none !important;
+  box-shadow: none !important;
+}
