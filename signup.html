@@ -179,6 +179,17 @@
     }
     function clearMsg() { msgEl.className = 'msg'; msgEl.textContent = ''; }
 
+    // ── Reserved words
+    const RESERVED_EMAILS = ['guest', 'guest account', 'guestaccount'];
+    const RESERVED_USERNAMES = ['guest', 'admin', 'administrator', 'mod', 'moderator', 'root', 'system', 'modatorial'];
+
+    function isReservedEmail(raw) {
+      return RESERVED_EMAILS.includes(String(raw || '').trim().toLowerCase());
+    }
+    function isReservedUsername(raw) {
+      return RESERVED_USERNAMES.includes(String(raw || '').trim().toLowerCase());
+    }
+
     // ── 1. SDK check ─────────────────────────────────
     if (typeof firebase === 'undefined') {
       showWarn('❌ Firebase SDK failed to load.');
@@ -225,7 +236,7 @@
     const usernameHint  = $('usernameHint');
 
     let usernameCheckTimer = null;
-    let usernameStatus = 'idle'; // 'ok' | 'bad' | 'taken' | 'idle'
+    let usernameStatus = 'idle';
 
     usernameInput.addEventListener('input', () => {
       const v = usernameInput.value.trim();
@@ -234,6 +245,12 @@
         usernameHint.textContent = '3–24 chars · a–z · 0–9 · _ - .';
         usernameHint.className = 'hint';
         usernameStatus = 'idle';
+        return;
+      }
+      if (isReservedUsername(v)) {
+        usernameHint.textContent = '❌ "' + v + '" is reserved.';
+        usernameHint.className = 'hint bad';
+        usernameStatus = 'bad';
         return;
       }
       if (!USERNAME_RE.test(v)) {
@@ -311,6 +328,18 @@
       const pw2   = $('password2').value;
       const tos   = $('tos').checked;
 
+      /* ══════════════════ GUEST BLOCK ══════════════════ */
+      if (isReservedEmail(email)) {
+        return showError(
+          '❌ "guest" is a shared account. Go to the Sign in page and ' +
+          'type "guest" as the email to enter it — no password needed.'
+        );
+      }
+      if (isReservedUsername(uname)) {
+        return showError('❌ That username is reserved. Pick another.');
+      }
+      /* ═══════════════════════════════════════════════════ */
+
       // Client validation
       if (!email)          return showError('Email is required.');
       if (!uname)          return showError('Username is required.');
@@ -327,7 +356,6 @@
       submit.textContent = 'Creating account…';
 
       try {
-        // Double-check username (in case someone else took it in the last minute)
         const unameRef = db.collection('usernames').doc(uname.toLowerCase());
         const existing = await unameRef.get();
         if (existing.exists) {
@@ -336,11 +364,12 @@
           });
         }
 
-        // Create auth user
+        const Persistence = firebase.auth.Auth.Persistence;
+        await auth.setPersistence(Persistence.LOCAL);
+
         const cred = await auth.createUserWithEmailAndPassword(email, pw);
         const uid = cred.user.uid;
 
-        // Write profile + reserve username
         const profile = {
           uid,
           email: email.toLowerCase(),
@@ -350,6 +379,7 @@
           photoURL: null,
           phone: null,
           bio: '',
+          isGuest: false,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };

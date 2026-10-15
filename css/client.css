@@ -28,7 +28,7 @@ body > button[data-tt-menu-btn="1"] {
   letter-spacing: 0.02em;
   color: #fff !important;
   cursor: pointer;
-  border: 2px solid #fff !important;
+  border: 1px solid var(--tt-border, #fff) !important;
   transition:
     transform   .28s cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow  .28s ease,
@@ -186,3 +186,16 @@ body > button[data-tt-menu-btn="1"]:nth-of-type(5) { animation-delay: 0.24s; }
   pointer-events: none;
 }
 #tt-topright-stack > * { pointer-events: auto; }
+
+button[data-tt-color-button="1"] {
+  border-color: var(--tt-accent, #00F5D4) !important;
+  border-radius: 12px !important;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease !important;
+}
+button[data-tt-color-button="1"]:hover,
+button[data-tt-color-button="1"]:focus-visible {
+  border-color: var(--tt-accent, #00F5D4) !important;
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--tt-accent, #00F5D4) 30%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.25) !important;
+}

@@ -30,6 +30,24 @@
 <div id="flash"></div>
 <div id="skip">press any key to skip</div>
 
+<div class="modal" id="modal-panorama-fallback" role="dialog" aria-modal="true" aria-labelledby="pano-fallback-title">
+  <div class="modal-inner pano-fallback-inner">
+    <h2 id="pano-fallback-title">🌌 Choose a panorama</h2>
+    <p>No panorama image was found. Choose a background for this session:</p>
+    <div class="pano-fallback-options">
+      <button type="button" data-pano-choice="black">Black</button>
+      <button type="button" data-pano-choice="white">White</button>
+    </div>
+    <div class="pano-gradient-choice">
+      <label>Custom gradient
+        <span><input id="pano-gradient-start" type="color" value="#0f172a" aria-label="Gradient start color"></span>
+        <span><input id="pano-gradient-end" type="color" value="#00f5d4" aria-label="Gradient end color"></span>
+      </label>
+      <button type="button" data-pano-choice="gradient">Use gradient</button>
+    </div>
+  </div>
+</div>
+
 <!-- Credits modal -->
 <div class="modal" id="modal-credits">
   <div class="modal-inner">
@@ -72,6 +90,7 @@
   const FINAL_TEXT = 'MODATORIAL.IO';
 
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  const PANORAMA_FALLBACK_KEY = 'tt-pano-fallback';
 
   let skipped = false;
   let menuShown = false;
@@ -79,7 +98,16 @@
   /* ============================================================
    * PANORAMA LOADER
    * ============================================================ */
-  function loadPanorama() {
+  function applyFallback(choice) {
+    const background = choice.type === 'black' ? '#000' :
+      choice.type === 'white' ? '#fff' :
+      `linear-gradient(135deg, ${choice.start}, ${choice.end})`;
+    $pano.style.backgroundImage = 'none';
+    $pano.style.background = background;
+    $pano.classList.add('loaded');
+  }
+
+  async function loadPanorama() {
     const candidates = [
       'mods/panorama-bg/assets/panorama.png',
       'mods/panorama-bg/assets/panorama.jpg',
@@ -87,26 +115,59 @@
       'mods/panorama-bg/assets/panorama.webp',
       'assets/panorama.png'
     ];
-    let i = 0;
-    const tryNext = () => {
-      if (i >= candidates.length) {
-        $pano.style.background =
-          'radial-gradient(circle at 50% 40%, #1a1a3a 0%, #0a0a1a 55%, #3a1a4a 100%)';
-        $pano.classList.add('loaded');
-        return;
-      }
-      const url = candidates[i++];
+    for (const url of candidates) {
       const img = new Image();
-      img.onload  = () => {
+      const loaded = await new Promise(resolve => {
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+      if (loaded) {
         $pano.style.backgroundImage = `url("${url}")`;
         $pano.style.backgroundSize  = 'cover';
         $pano.style.backgroundPosition = 'center';
         $pano.classList.add('loaded');
+        return;
+      }
+    }
+
+    const picker = document.getElementById('modal-panorama-fallback');
+    const startColor = document.getElementById('pano-gradient-start');
+    const endColor = document.getElementById('pano-gradient-end');
+    try {
+      const saved = JSON.parse(localStorage.getItem(PANORAMA_FALLBACK_KEY) || 'null');
+      if (saved && saved.type === 'gradient' &&
+          /^#[\da-f]{6}$/i.test(saved.start) && /^#[\da-f]{6}$/i.test(saved.end)) {
+        startColor.value = saved.start;
+        endColor.value = saved.end;
+      }
+    } catch (error) {
+      console.warn('[Splash] Could not load saved panorama colors:', error);
+    }
+    await new Promise(resolve => {
+      const applyChoice = event => {
+        const choice = event.currentTarget.dataset.panoChoice;
+        const selection = {
+          type: choice,
+          start: choice === 'gradient' ? startColor.value : undefined,
+          end: choice === 'gradient' ? endColor.value : undefined
+        };
+        applyFallback(selection);
+        try {
+          localStorage.setItem(PANORAMA_FALLBACK_KEY, JSON.stringify(selection));
+        } catch (error) {
+          console.warn('[Splash] Could not save panorama choice:', error);
+        }
+        picker.classList.remove('show');
+        picker.querySelectorAll('[data-pano-choice]').forEach(button =>
+          button.removeEventListener('click', applyChoice));
+        resolve();
       };
-      img.onerror = tryNext;
-      img.src = url;
-    };
-    tryNext();
+      picker.querySelectorAll('[data-pano-choice]').forEach(button =>
+        button.addEventListener('click', applyChoice));
+      picker.classList.add('show');
+      picker.querySelector('[data-pano-choice]').focus();
+    });
   }
 
   /* ============================================================
@@ -206,7 +267,7 @@
       }
 
       /* ---- PHASE 4 : panorama fades in ---- */
-      loadPanorama();
+      await loadPanorama();
       await wait(1100);
       if (skipped) return;
 
@@ -260,10 +321,8 @@
     try { $letters.innerHTML = ''; } catch {}
 
     try {
-      $pano.classList.remove('loaded');
-      $pano.classList.add('fade-out');
-      $pano.style.backgroundImage = 'none';
-      $pano.style.background = '#000';
+      $pano.classList.remove('fade-out');
+      $pano.classList.add('loaded');
     } catch {}
 
     try {
@@ -334,11 +393,14 @@
     b.addEventListener('click', () => b.closest('.modal').classList.remove('show'));
   });
   document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+    m.addEventListener('click', e => {
+      if (e.target === m && m.id !== 'modal-panorama-fallback') m.classList.remove('show');
+    });
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape')
-      document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+      document.querySelectorAll('.modal.show:not(#modal-panorama-fallback)')
+        .forEach(m => m.classList.remove('show'));
   });
 
   /* ============================================================

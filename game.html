@@ -51,6 +51,119 @@
     font-weight: 800; font-size: 20px; letter-spacing: -.3px;
     color: #e6edf3;
   }
+
+  /* ============================================================
+     SITE NAV — compact top-left menu, clear of the game action bar
+     Tagged as <nav> + data-tt-our="1" so nothing else touches it
+     ============================================================ */
+  #tt-site-nav {
+    position: fixed;
+    top: 8px;
+    left: 20px;
+    z-index: 99995;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--tt-text, #e6edf3);
+    user-select: none;
+  }
+  #tt-site-nav .toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, var(--tt-card, #1E293B), var(--tt-bg, #0F172A));
+    border: 1px solid var(--tt-border, #0284C7);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--tt-text, #e6edf3);
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease, transform .2s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,.45);
+  }
+  #tt-site-nav .toggle:hover {
+    border-color: var(--tt-accent, #00F5D4);
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--tt-accent, #00F5D4) 25%, transparent);
+    transform: translateY(-1px);
+  }
+  #tt-site-nav.open .toggle {
+    border-color: var(--tt-accent, #00F5D4);
+    background: linear-gradient(180deg, var(--tt-emerald, #10B981), var(--tt-mint, #059669));
+    color: #fff;
+  }
+  #tt-site-nav .toggle .chev {
+    transition: transform .2s ease;
+    font-size: 9px;
+    opacity: .7;
+  }
+  #tt-site-nav.open .toggle .chev { transform: rotate(180deg); }
+
+  #tt-site-nav .panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 270px;
+    background: color-mix(in srgb, var(--tt-bg, #0F172A) 94%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--tt-border, #0284C7);
+    border-radius: 16px;
+    padding: 12px 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  #tt-site-nav.open .panel { display: block; }
+  #tt-site-nav .panel h4 {
+    margin: 8px 8px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tt-accent-2, #6366F1);
+    opacity: .9;
+  }
+  #tt-site-nav .panel h4:first-child { margin-top: 2px; }
+  #tt-site-nav .panel a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    color: var(--tt-text, #e6edf3);
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: background .12s ease, color .12s ease;
+  }
+  #tt-site-nav .panel a:hover {
+    background: color-mix(in srgb, var(--tt-accent, #00F5D4) 12%, transparent);
+    color: var(--tt-accent, #00F5D4);
+  }
+  #tt-site-nav .panel a.current {
+    background: color-mix(in srgb, var(--tt-emerald, #10B981) 14%, transparent);
+    color: var(--tt-accent, #00F5D4);
+    font-weight: 700;
+  }
+  #tt-site-nav .panel a .icon {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+    flex: 0 0 20px;
+  }
+  #tt-site-nav .panel a .desc {
+    font-size: 10px;
+    color: var(--tt-text-dim, #7d8590);
+    margin-left: auto;
+    font-weight: 400;
+  }
+  #tt-site-nav .panel a:hover .desc { color: var(--tt-accent, #00F5D4); opacity: .75; }
+  @media (max-width: 520px) {
+    #tt-site-nav { top: 8px; left: 18px; }
+    #tt-site-nav .toggle { padding: 7px 10px; }
+    #tt-site-nav .panel { width: min(270px, calc(100vw - 16px)); }
+  }
 </style>
 </head>
 
@@ -61,6 +174,53 @@
   <div class="spinner"></div>
   <div>Checking sign-in…</div>
 </div>
+
+<!-- ============================================================
+     SITE NAV — compact top-left menu
+     ============================================================ -->
+<nav id="tt-site-nav" data-tt-our="1" aria-label="Site navigation">
+  <button type="button" class="toggle" data-tt-our="1" aria-expanded="false" aria-controls="tt-site-panel">
+    <span>🧭</span>
+    <span>Site Menu</span>
+    <span class="chev">▲</span>
+  </button>
+  <div class="panel" id="tt-site-panel" role="menu">
+
+    <h4>Main</h4>
+    <a href="index.html" role="menuitem">
+      <span class="icon">🏠</span> Home <span class="desc">splash</span>
+    </a>
+    <a href="game.html" role="menuitem" class="current">
+      <span class="icon">🎮</span> Game <span class="desc">playing</span>
+    </a>
+    <h4>Account</h4>
+    <a href="login.html" role="menuitem">
+      <span class="icon">🔑</span> Sign in
+    </a>
+    <a href="signup.html" role="menuitem">
+      <span class="icon">✍️</span> Create account
+    </a>
+    <a href="account.html" role="menuitem">
+      <span class="icon">👤</span> My Account <span class="desc">stats</span>
+    </a>
+
+    <h4>Community</h4>
+    <a href="mod-store.html" role="menuitem">
+      <span class="icon">📦</span> Mod Store <span class="desc">browse</span>
+    </a>
+    <h4>Tools &amp; Guides</h4>
+    <a href="modding-guide.html" role="menuitem">
+      <span class="icon">📖</span> Modding Guide
+    </a>
+    <a href="replay-to-mp4.html" role="menuitem">
+      <span class="icon">🎬</span> Replay → MP4
+    </a>
+    <a href="pano-generator.html" role="menuitem">
+      <span class="icon">🌌</span> Panorama Generator
+    </a>
+
+  </div>
+</nav>
 
 <canvas id="canvasA" width="1280" height="720" style="width: 1280px; height: 720px;"></canvas>
 
@@ -82,7 +242,8 @@
   const skip = isLocal && new URLSearchParams(location.search).has('skipauth');
   if (skip) {
     console.log('[Auth] Dev bypass — skipping gate');
-    document.getElementById('tt-auth-veil').classList.add('hidden');
+    const veil = document.getElementById('tt-auth-veil');
+    if (veil) veil.classList.add('hidden');
     return;
   }
 
@@ -106,7 +267,6 @@
   const user = await waitForAuth();
 
   if (user === undefined) {
-    // Auth never became ready — Firebase is misconfigured
     try { sessionStorage.setItem('tt-auth-error',
       'Could not reach authentication service. Check firebase-config.js.'); } catch {}
     location.replace('login.html?next=' + encodeURIComponent('game.html'));
@@ -122,6 +282,56 @@
   console.log('[Auth] Signed in as', user.displayName || user.email || user.uid);
   const veil = document.getElementById('tt-auth-veil');
   if (veil) veil.classList.add('hidden');
+})();
+</script>
+
+<!-- ============================================================
+     SITE NAV BEHAVIOR
+     ============================================================ -->
+<script>
+(function () {
+  'use strict';
+  var nav = document.getElementById('tt-site-nav');
+  if (!nav) return;
+
+  var toggle = nav.querySelector('.toggle');
+  var panel  = nav.querySelector('.panel');
+
+  function setOpen(open) {
+    nav.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
+  toggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setOpen(!nav.classList.contains('open'));
+  });
+
+  // Outside click closes
+  document.addEventListener('click', function (e) {
+    if (nav.classList.contains('open') && !nav.contains(e.target)) {
+      setOpen(false);
+    }
+  });
+
+  // Escape closes
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && nav.classList.contains('open')) {
+      setOpen(false);
+    }
+  });
+
+  // Defensive: if something ever removes the nav (game-wide DOM wipes),
+  // re-attach it. Cheap check every 2 s.
+  setInterval(function () {
+    if (!document.body.contains(nav)) {
+      document.body.appendChild(nav);
+    }
+  }, 2000);
+
+  var linkCount = panel.querySelectorAll('a').length;
+  console.log('%c[SiteNav]', 'color:#00F5D4;font-weight:bold',
+    'ready — ' + linkCount + ' links');
 })();
 </script>
 

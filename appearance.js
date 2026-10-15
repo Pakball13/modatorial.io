@@ -13,6 +13,7 @@
 
   function build() {
     const overlay = document.createElement('div');
+    overlay.id = 'tt-appearance-modal';
     overlay.dataset.ttOur = '1';
     Object.assign(overlay.style, {
       position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.9)',
@@ -22,8 +23,8 @@
 
     const panel = document.createElement('div');
     panel.style.cssText =
-      'background:#161b22;border:1px solid #30363d;border-radius:12px;' +
-      'padding:26px 28px;max-width:520px;width:100%;color:#fff;' +
+      'background:var(--tt-card,#161b22);border:1px solid var(--tt-border,#30363d);border-radius:16px;' +
+      'padding:26px 28px;max-width:520px;width:100%;color:var(--tt-text,#fff);' +
       'max-height:85vh;overflow-y:auto;';
 
     const API = global.TerritorialMods;
@@ -34,7 +35,7 @@
     head.innerHTML = '<div style="font-size:20px;font-weight:700;">🎨 Appearance</div>';
     const close = document.createElement('button');
     close.textContent = '✕';
-    close.style.cssText = 'background:none;border:0;color:#fff;font-size:18px;cursor:pointer;';
+    close.style.cssText = 'background:none;border:0;color:var(--tt-text,#fff);font-size:18px;cursor:pointer;';
     close.addEventListener('click', () => overlay.style.display = 'none');
     head.appendChild(close);
     panel.appendChild(head);
@@ -47,7 +48,7 @@
       h.textContent = title;
       h.style.cssText =
         'font-size:12px;font-weight:700;text-transform:uppercase;' +
-        'letter-spacing:1px;color:#58a6ff;margin-bottom:10px;';
+        'letter-spacing:1px;color:var(--tt-accent,#58a6ff);margin-bottom:10px;';
       s.appendChild(h);
       panel.appendChild(s);
       return s;
@@ -72,7 +73,7 @@
       const isActive = API.getTheme() === t;
       chip.textContent = t[0].toUpperCase() + t.slice(1);
       chip.style.cssText =
-        `padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;` +
+        `padding:12px 8px;border-radius:12px;cursor:pointer;font-family:inherit;` +
         `font-size:12px;font-weight:600;text-transform:capitalize;` +
         `background:${themeColors[t] || '#333'};` +
         `color:${['mono','midnight'].includes(t) ? '#000' : '#fff'};` +
@@ -95,7 +96,7 @@
       b.textContent = l[0].toUpperCase() + l.slice(1);
       const isActive = API.getLayout() === l;
       b.style.cssText =
-        `padding:12px 8px;border-radius:8px;cursor:pointer;font-family:inherit;` +
+        `padding:12px 8px;border-radius:12px;cursor:pointer;font-family:inherit;` +
         `font-size:13px;font-weight:600;background:#21262d;color:#fff;` +
         `border:2px solid ${isActive ? '#3fb950' : '#30363d'};`;
       b.addEventListener('click', () => {
@@ -120,12 +121,12 @@
       const row = document.createElement('label');
       row.style.cssText =
         'display:flex;align-items:center;gap:10px;padding:10px 12px;' +
-        'background:#0d1117;border:1px solid #21262d;border-radius:8px;' +
+        'background:var(--tt-bg,#0d1117);border:1px solid var(--tt-border,#21262d);border-radius:10px;' +
         'margin-bottom:6px;cursor:pointer;font-size:13px;';
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = !!t.get();
-      cb.style.cssText = 'width:18px;height:18px;cursor:pointer;accent-color:#3fb950;';
+      cb.style.cssText = 'width:18px;height:18px;cursor:pointer;accent-color:var(--tt-accent,#3fb950);';
       cb.addEventListener('change', () => t.set(cb.checked));
       row.append(cb, document.createTextNode(t.label));
       toggleSec.appendChild(row);

@@ -157,3 +157,141 @@ html[data-tt-theme="modatorial"] #tt-chrome {
   border-color: var(--tt-accent, #3fb950) !important;
   color: var(--tt-accent, #3fb950) !important;
 }
+
+#tt-settings-modal,
+#tt-appearance-modal {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+#tt-settings-modal > div,
+#tt-appearance-modal > div {
+  background: var(--tt-card, #161b22) !important;
+  border-color: var(--tt-border, #30363d) !important;
+  border-radius: 18px !important;
+  color: var(--tt-text, #fff) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.62), 0 0 36px color-mix(in srgb, var(--tt-accent, #00F5D4) 10%, transparent);
+}
+#tt-settings-modal input[type="text"],
+#tt-settings-modal select {
+  background: var(--tt-bg, #0d1117) !important;
+  border-color: var(--tt-border, #30363d) !important;
+  border-radius: 10px !important;
+  color: var(--tt-text, #e6edf3) !important;
+}
+#tt-settings-modal input[type="color"] {
+  width: 72px !important;
+  height: 42px !important;
+  padding: 4px !important;
+  border: 1px solid var(--tt-border, #30363d) !important;
+  border-radius: 12px !important;
+  background: var(--tt-bg, #0d1117) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tt-accent, #00F5D4) 12%, transparent);
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+#tt-settings-modal input[type="color"]:hover,
+#tt-settings-modal input[type="color"]:focus-visible {
+  border-color: var(--tt-accent, #00F5D4) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tt-accent, #00F5D4) 18%, transparent);
+  transform: translateY(-1px);
+}
+#tt-settings-modal button,
+#tt-appearance-modal button {
+  border-radius: 10px !important;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+#tt-settings-modal button:hover,
+#tt-appearance-modal button:hover {
+  border-color: var(--tt-accent, #00F5D4) !important;
+}
+button[data-tt-color-button="1"] {
+  border: 2px solid var(--tt-accent, #00F5D4) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--tt-accent, #00F5D4) 18%, transparent), inset 0 1px 0 rgba(255,255,255,.2);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease !important;
+}
+button[data-tt-color-button="1"]:hover,
+button[data-tt-color-button="1"]:focus-visible {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--tt-accent, #00F5D4) 30%, transparent), inset 0 1px 0 rgba(255,255,255,.25);
+}
+#tt-pano-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 1000100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 6, 15, .78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: system-ui, sans-serif;
+  color: var(--tt-text, #e6edf3);
+  animation: tt-pano-fade-in .2s ease both;
+}
+#tt-pano-picker .tt-pano-panel {
+  width: min(480px, 100%);
+  padding: 24px;
+  border: 1px solid var(--tt-border, #0284c7);
+  border-radius: 18px;
+  background: linear-gradient(155deg, var(--tt-card, #1e293b), var(--tt-bg, #0f172a));
+  box-shadow: 0 24px 80px rgba(0,0,0,.68), 0 0 36px color-mix(in srgb, var(--tt-accent, #00F5D4) 12%, transparent);
+  animation: tt-pano-panel-in .28s cubic-bezier(.2,.8,.2,1) both;
+}
+#tt-pano-picker h2 { margin: 0 0 8px; font-size: 20px; }
+#tt-pano-picker p { margin: 0 0 18px; color: var(--tt-text-dim, #7d8590); font-size: 13px; }
+#tt-pano-picker .tt-pano-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#tt-pano-picker button {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--tt-accent, #00F5D4) 38%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--tt-accent, #00F5D4) 9%, var(--tt-bg, #0f172a));
+  color: var(--tt-text, #e6edf3);
+  font: 600 13px system-ui, sans-serif;
+  cursor: pointer;
+}
+#tt-pano-picker button:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--tt-accent, #00F5D4) 16%, var(--tt-bg, #0f172a));
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--tt-accent, #00F5D4) 14%, transparent);
+}
+#tt-pano-picker .tt-pano-gradient {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--tt-border, #0284c7) 55%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tt-bg, #0f172a) 88%, transparent);
+}
+#tt-pano-picker .tt-pano-gradient label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tt-text-dim, #7d8590);
+  font-size: 12px;
+}
+#tt-pano-picker input[type="color"] {
+  width: 34px;
+  height: 32px;
+  padding: 3px;
+  border: 1px solid var(--tt-border, #0284c7);
+  border-radius: 9px;
+  background: var(--tt-bg, #0f172a);
+  cursor: pointer;
+}
+#tt-pano-picker .tt-pano-error { margin-top: 10px; color: var(--tt-danger, #f85149); }
+@keyframes tt-pano-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tt-pano-panel-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #tt-pano-picker, #tt-pano-picker .tt-pano-panel { animation: none; }
+  #tt-pano-picker button, #tt-settings-modal button, #tt-appearance-modal button { transition: none; }
+}

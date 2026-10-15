@@ -195,10 +195,10 @@
 
     const panel = document.createElement('div');
     Object.assign(panel.style, {
-      background: '#161b22', border: '1px solid #30363d',
-      borderRadius: '12px', padding: '24px 26px',
+      background: 'var(--tt-card, #161b22)', border: '1px solid var(--tt-border, #30363d)',
+      borderRadius: '16px', padding: '24px 26px',
       maxWidth: '520px', width: '100%',
-      maxHeight: '80vh', overflowY: 'auto', color: '#fff'
+      maxHeight: '80vh', overflowY: 'auto', color: 'var(--tt-text, #fff)'
     });
 
     const head = document.createElement('div');
@@ -425,6 +425,7 @@
     setTheme(name) {
       applyTheme(name);
       if (chromeEl) updateChrome();
+      colorGameMenuButtons();
       API.showToast(`🎨 Theme: ${name}`);
       return name;
     },
@@ -673,6 +674,31 @@
       ? origFillText.call(this, text, x, y, maxWidth)
       : origFillText.call(this, text, x, y);
   };
+  const origStrokeRect = OrigCtx.strokeRect;
+  OrigCtx.strokeRect = function (x, y, width, height) {
+    const isGameLobby = this.canvas && this.canvas.id === 'canvasA' &&
+      API.isInLobby() && width >= 56 && height >= 24;
+    const stroke = typeof this.strokeStyle === 'string'
+      ? this.strokeStyle.replace(/\s/g, '').toLowerCase()
+      : '';
+    if (!isGameLobby || !['#fff', '#ffffff', 'white', 'rgb(255,255,255)'].includes(stroke)) {
+      return origStrokeRect.call(this, x, y, width, height);
+    }
+
+    const previousStroke = this.strokeStyle;
+    this.strokeStyle = getComputedStyle(document.documentElement)
+      .getPropertyValue('--tt-accent').trim() || '#00F5D4';
+    if (typeof this.roundRect === 'function') {
+      this.save();
+      this.beginPath();
+      this.roundRect(x, y, width, height, Math.min(12, height / 3, width / 3));
+      this.stroke();
+      this.restore();
+    } else {
+      origStrokeRect.call(this, x, y, width, height);
+    }
+    this.strokeStyle = previousStroke;
+  };
 
   const HIDE_POPUP = [
     'Logs','Game Log','Clan Charts','Gold Transfer',
@@ -823,6 +849,16 @@
     return out;
   }
   function getPlayerInput() { return document.getElementById('input0'); }
+  function tagNamedColorButtons() {
+    document.querySelectorAll('button').forEach(btn => {
+      const label = stripEmoji(btn.textContent).toLowerCase();
+      if (label === 'color' || label.startsWith('color ')) {
+        btn.dataset.ttColorButton = '1';
+        btn.setAttribute('aria-label', 'Change player color');
+        btn.title = 'Change player color';
+      }
+    });
+  }
   function getColorButton() {
     for (const b of document.querySelectorAll('body > button')) {
       if (b.parentElement !== document.body) continue;
@@ -835,6 +871,9 @@
       if ((b.textContent || '').trim().length > 0) continue;
       const bg = b.style.backgroundColor || '';
       if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') continue;
+      b.dataset.ttColorButton = '1';
+      b.setAttribute('aria-label', 'Change player color');
+      b.title = 'Change player color';
       return b;
     }
     return null;
@@ -904,6 +943,7 @@
   }
 
   function applyLayout() {
+    tagNamedColorButtons();
     const mainBtns = getMainMenuButtons();
     if (mainBtns.length < 1) return;
 
@@ -961,12 +1001,12 @@
           inputEl.style.setProperty('padding', '0 16px', 'important');
           inputEl.style.setProperty('font-size', '16px', 'important');
           inputEl.style.setProperty('text-align', 'left', 'important');
-          inputEl.style.setProperty('border-radius', '8px', 'important');
+          inputEl.style.setProperty('border-radius', '12px', 'important');
           inputEl.style.setProperty('display', 'block', 'important');
         }
         if (colorBtn) {
           hardPos(colorBtn, startX + panelW - swatchW, y, swatchW, rowH);
-          colorBtn.style.setProperty('border-radius', '8px', 'important');
+          colorBtn.style.setProperty('border-radius', '12px', 'important');
           colorBtn.style.setProperty('padding', '0', 'important');
         }
         y += rowH + gap;
@@ -975,7 +1015,7 @@
       all.forEach(b => {
         hardPos(b, startX, y, panelW, rowH);
         b.dataset.ttLayout = 'sidebar';
-        b.style.setProperty('border-radius', '8px', 'important');
+        b.style.setProperty('border-radius', '12px', 'important');
         b.style.setProperty('font-size', Math.max(11, Math.floor(rowH * 0.25)) + 'px', 'important');
         const label = b.querySelector('.tt-btn-label');
         if (collapsed) {
@@ -1017,7 +1057,7 @@
         const r = Math.floor(i / cols);
         hardPos(b, startX + c * (colW + gap), y + r * (rowH + gap), colW, rowH);
         b.dataset.ttLayout = 'grid';
-        b.style.setProperty('border-radius', '8px', 'important');
+        b.style.setProperty('border-radius', '12px', 'important');
         b.style.setProperty('padding', '0 18px', 'important');
         b.style.setProperty('flex-direction', 'row', 'important');
         b.style.setProperty('justify-content', 'flex-start', 'important');
@@ -1683,15 +1723,15 @@
    * Color the game's own menu buttons with the Modatorial palette
    * ============================================================ */
   const MENU_BTN_COLORS = {
-    'Custom Scenario': { base: 'linear-gradient(180deg,#0284C7 0%,#0369a1 100%)',
-                         hover:'linear-gradient(180deg,#0ea5e9 0%,#0284C7 100%)',
-                         border:'#00F5D4' },
-    'My Account':      { base: 'linear-gradient(180deg,#6366F1 0%,#4a4dc9 100%)',
-                         hover:'linear-gradient(180deg,#818cf8 0%,#6366F1 100%)',
-                         border:'#00F5D4' },
-    'Game Menu':       { base: 'linear-gradient(180deg,#1E293B 0%,#0F172A 100%)',
-                         hover:'linear-gradient(180deg,#334155 0%,#1E293B 100%)',
-                         border:'#0284C7' }
+    'Custom Scenario': { base: 'linear-gradient(145deg,var(--tt-accent-2,#6366F1),var(--tt-bg,#0F172A))',
+                         hover:'linear-gradient(145deg,var(--tt-accent,#00F5D4),var(--tt-accent-2,#6366F1))',
+                         border:'var(--tt-accent,#00F5D4)' },
+    'My Account':      { base: 'linear-gradient(145deg,var(--tt-accent-2,#6366F1),var(--tt-card,#1E293B))',
+                         hover:'linear-gradient(145deg,var(--tt-accent,#00F5D4),var(--tt-accent-2,#6366F1))',
+                         border:'var(--tt-accent,#00F5D4)' },
+    'Game Menu':       { base: 'linear-gradient(145deg,var(--tt-card,#1E293B),var(--tt-bg,#0F172A))',
+                         hover:'linear-gradient(145deg,var(--tt-border,#0284C7),var(--tt-card,#1E293B))',
+                         border:'var(--tt-border,#0284C7)' }
   };
 
   function colorGameMenuButtons() {
@@ -1706,8 +1746,9 @@
 
       for (const [key, colors] of Object.entries(MENU_BTN_COLORS)) {
         if (label.toLowerCase().includes(key.toLowerCase())) {
-          if (btn.dataset.ttColored === key) return;
+          if (btn.dataset.ttColored === key && btn.dataset.ttTheme === API.getTheme()) return;
           btn.dataset.ttColored = key;
+          btn.dataset.ttTheme = API.getTheme();
           btn.style.setProperty('background', colors.base, 'important');
           btn.style.setProperty('border-color', colors.border, 'important');
           if (!btn.dataset.ttHoverBound) {

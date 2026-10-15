@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Modatorial.io — AI Player</title>
+<meta name="description" content="Modatorial.io AI Player Mode">
+<meta name="viewport" content="width=device-width, maximum-scale=1">
+
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="favicon.ico">
+
+<link rel="stylesheet" href="css/themes.css">
+<link rel="stylesheet" href="css/client.css">
+
+<style>
+  html, body {
+    overflow: hidden; padding: 0; margin: 0;
+    background: black; color: white;
+  }
+  * { box-sizing: border-box; }
+  a { color: rgb(225, 225, 255); }
+
+  #tt-auth-veil {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 50% 40%, #1a2740 0%, #0F172A 55%, #060a14 100%);
+    z-index: 2000000;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    color: #7d8590;
+    font-family: system-ui, sans-serif; font-size: 14px;
+    transition: opacity .35s ease;
+    text-align: center; padding: 20px;
+  }
+  #tt-auth-veil.hidden { opacity: 0; pointer-events: none; }
+  #tt-auth-veil .spinner {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid rgba(0,245,212,0.15);
+    border-top-color: #00F5D4;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #tt-auth-veil .brand {
+    font-weight: 800; font-size: 20px; letter-spacing: -.3px;
+    color: #e6edf3;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="tt-auth-veil">
+  <div class="brand">⬢ Modatorial.io · AI Mode</div>
+  <div class="spinner"></div>
+  <div>Checking sign-in…</div>
+</div>
+
+<canvas id="canvasA" width="1280" height="720" style="width: 1280px; height: 720px;"></canvas>
+
+<!-- Firebase + auth -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="auth.js"></script>
+
+<script>
+(async () => {
+  'use strict';
+  const isLocal = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+  const skip = isLocal && new URLSearchParams(location.search).has('skipauth');
+  if (skip) {
+    document.getElementById('tt-auth-veil').classList.add('hidden');
+    return;
+  }
+  function waitForAuth(timeoutMs) {
+    return new Promise(resolve => {
+      if (window.Auth && window.Auth.ready) return resolve(window.Auth.current());
+      const start = Date.now();
+      const iv = setInterval(() => {
+        if (window.Auth && window.Auth.ready) {
+          clearInterval(iv); resolve(window.Auth.current());
+        } else if (Date.now() - start > (timeoutMs || 7000)) {
+          clearInterval(iv); resolve(undefined);
+        }
+      }, 80);
+    });
+  }
+  const user = await waitForAuth();
+  if (user === undefined) {
+    try { sessionStorage.setItem('tt-auth-error',
+      'Could not reach authentication service. Check firebase-config.js.'); } catch {}
+    location.replace('login.html?next=' + encodeURIComponent('bot.html'));
+    return;
+  }
+  if (!user) {
+    try { sessionStorage.setItem('tt-auth-return', 'bot.html'); } catch {}
+    location.replace('login.html?next=' + encodeURIComponent('bot.html'));
+    return;
+  }
+  console.log('[Auth] Signed in as', user.displayName || user.email || user.uid);
+  const veil = document.getElementById('tt-auth-veil');
+  if (veil) veil.classList.add('hidden');
+})();
+</script>
+
+<!-- Mod loader & client modules -->
+<script src="ttmod-translator.js"></script>
+<script src="ttmod-maker.js"></script>
+<script src="modLoader.js"></script>
+<script src="sounds.js"></script>
+<script src="moddables.js"></script>
+<script src="promo-codes.js"></script>
+<script src="mod-store.js"></script>
+<script src="client-features.js"></script>
+<script src="account.js"></script>
+<script src="appearance.js"></script>
+
+<!-- AI Player — this is the only difference from game.html -->
+<script src="ai-player.js"></script>
+
+<!-- The game -->
+<script src="game.js"></script>
+
+</body>
+</html>

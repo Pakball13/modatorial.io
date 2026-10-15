@@ -100,12 +100,15 @@
       return () => listeners.delete(fn);
     },
 
-    async signup(email, password, username, displayName) {
+    async signup(email, password, username, displayName, remember = true) {
       if (!auth || !db) throw new Error('Firebase is not ready. Wait a moment and try again.');
       if (!USERNAME_RE.test(username || ''))
         throw new Error('Username must be 3–24 chars: letters, numbers, _ - .');
       if (!email || !password) throw new Error('Email and password are required.');
       if (password.length < 8)  throw new Error('Password must be at least 8 characters.');
+
+      const Persistence = firebase.auth.Auth.Persistence;
+      await auth.setPersistence(remember ? Persistence.LOCAL : Persistence.SESSION);
 
       // 1. Check username availability
       const unameRef = db.collection('usernames').doc(username.toLowerCase());
@@ -167,9 +170,11 @@
       return profile;
     },
 
-    async login(email, password) {
+    async login(email, password, remember = true) {
       if (!auth) throw new Error('Firebase is not ready. Wait a moment and try again.');
       try {
+        const Persistence = firebase.auth.Auth.Persistence;
+        await auth.setPersistence(remember ? Persistence.LOCAL : Persistence.SESSION);
         const cred = await auth.signInWithEmailAndPassword(email, password);
         return cred.user;
       } catch (e) {

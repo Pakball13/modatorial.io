@@ -51,6 +51,8 @@
                border: 1px solid #7a1f1f; }
   .msg.success { display: block; background: #0d2a14; color: #3fb950;
                  border: 1px solid #1a5424; }
+  .msg.info { display: block; background: #0d1a2a; color: #58a6ff;
+              border: 1px solid #1f4d7a; }
   button.submit {
     width: 100%; padding: 12px; margin-top: 20px;
     background: #238636; color: #fff; border: 0; border-radius: 8px;
@@ -67,11 +69,27 @@
   .row a:hover { text-decoration: underline; }
   .divider {
     display: flex; align-items: center; gap: 12px;
-    margin: 24px 0 0; color: #6e7681; font-size: 11px;
+    margin: 24px 0 16px; color: #6e7681; font-size: 11px;
   }
   .divider::before, .divider::after {
     content: ''; flex: 1; height: 1px; background: #262a31;
   }
+  .guest-btn {
+    width: 100%; padding: 12px; border-radius: 8px;
+    background: linear-gradient(180deg, #6366F1, #4a4dc9);
+    color: #fff; border: 1px solid #00F5D4;
+    font: 600 14px system-ui; cursor: pointer;
+    transition: filter .15s, transform .05s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .guest-btn:hover:not(:disabled) { filter: brightness(1.15); }
+  .guest-btn:active:not(:disabled) { transform: translateY(1px); }
+  .guest-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .guest-note {
+    margin-top: 10px; font-size: 11px; color: #6e7681;
+    text-align: center; line-height: 1.5;
+  }
+  .guest-note b { color: #a5b4fc; }
   .footer {
     text-align: center; margin-top: 20px;
     font-size: 12px; color: #8b949e;
@@ -84,6 +102,16 @@
     border: 1px solid #f0883e; border-radius: 8px;
     font-size: 12px; line-height: 1.5;
   }
+  .guest-banner {
+    margin-top: 12px; padding: 10px 14px;
+    background: rgba(99,102,241,.12);
+    border: 1px solid #6366F1; border-radius: 8px;
+    font-size: 12px; color: #a5b4fc; line-height: 1.5;
+    display: none;
+  }
+  .guest-banner b { color: #c7d2fe; }
+  /* Hide entire password row when in guest mode */
+  .pw-row.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -97,14 +125,27 @@
     <form id="loginForm" autocomplete="on">
       <label for="email">Email</label>
       <input id="email" type="email" autocomplete="email"
-             placeholder="you@example.com" required>
+             placeholder="you@example.com — or type &quot;guest&quot;" required>
 
-      <label for="password">Password</label>
-      <div class="pw-wrap">
-        <input id="password" type="password" autocomplete="current-password"
-               placeholder="Your password" required>
-        <button type="button" class="pw-toggle" id="pwToggle">👁</button>
+      <div class="pw-row" id="pwRow">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input id="password" type="password" autocomplete="current-password"
+                 placeholder="Your password">
+          <button type="button" class="pw-toggle" id="pwToggle">👁</button>
+        </div>
       </div>
+
+      <div id="guestBanner" class="guest-banner">
+        <b>Guest mode</b> — no password needed. Anyone can use this shared
+        account. Stats and mods are visible to other guests.
+      </div>
+
+      <label id="rememberRow" style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:#adbac7;cursor:pointer;">
+        <input id="remember" type="checkbox" checked
+               style="width:16px;height:16px;accent-color:#3fb950;cursor:pointer;">
+        Keep me signed in on this device
+      </label>
 
       <button type="submit" class="submit" id="submitBtn">Sign in</button>
     </form>
@@ -117,7 +158,14 @@
 
     <div class="divider">OR</div>
 
-    <div class="footer">
+    <button type="button" class="guest-btn" id="guestBtn">
+      👤 Continue as Guest
+    </button>
+    <div class="guest-note">
+      No signup, no password. <b>Shared</b> with all other guests.
+    </div>
+
+    <div class="footer" style="margin-top:20px">
       Don't have an account?
       <a href="signup.html" id="signupLink">Create one</a>
     </div>
@@ -131,40 +179,51 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <!-- Your config (window.MODATORIAL_FIREBASE = {...}) -->
+  <!-- Your config -->
   <script src="firebase-config.js"></script>
 
   <script>
   (function () {
     'use strict';
 
+    /* ═════════════════════════════════════════════════════════════
+       GUEST ACCOUNT CONFIG
+       ─────────────────────────────────────────────────────────────
+       Firebase email/password accounts MUST have a password. So the
+       guest password below is filled in silently — the user never
+       sees or types it.
+       ═════════════════════════════════════════════════════════════ */
+    const GUEST_EMAIL    = 'guest@modatorial.io';
+    const GUEST_PASSWORD = 'ChangeMe_GuestAccess_2026!';
+    const GUEST_USERNAME = 'guest';
+    const GUEST_DISPLAY  = 'Guest';
+    /* ═══════════════════════════════════════════════════════════ */
+
     const $ = id => document.getElementById(id);
-    const msgEl   = $('msg');
-    const warnEl  = $('configWarn');
-    const submit  = $('submitBtn');
+    const msgEl     = $('msg');
+    const warnEl    = $('configWarn');
+    const submit    = $('submitBtn');
+    const guestBtn  = $('guestBtn');
+    const emailEl   = $('email');
+    const pwInput   = $('password');
+    const pwRow     = $('pwRow');
+    const guestBan  = $('guestBanner');
 
-    function showError(text) {
-      msgEl.className = 'msg error';
-      msgEl.textContent = text;
-    }
-    function showSuccess(text) {
-      msgEl.className = 'msg success';
-      msgEl.textContent = text;
-    }
-    function showWarn(html) {
-      warnEl.style.display = 'block';
-      warnEl.innerHTML = html;
-    }
-    function clearMsg() { msgEl.className = 'msg'; msgEl.textContent = ''; }
+    function showError(text)   { msgEl.className = 'msg error';   msgEl.textContent = text; }
+    function showSuccess(text) { msgEl.className = 'msg success'; msgEl.textContent = text; }
+    function showInfo(text)    { msgEl.className = 'msg info';    msgEl.textContent = text; }
+    function showWarn(html)    { warnEl.style.display = 'block';  warnEl.innerHTML = html; }
+    function clearMsg()        { msgEl.className = 'msg';         msgEl.textContent = ''; }
 
-    // ── 1. Verify Firebase SDK loaded ─────────────────
+    /* ── 1. SDK check ───────────────────────────────────── */
     if (typeof firebase === 'undefined') {
       showWarn('❌ Firebase SDK failed to load. Check your internet connection.');
       submit.disabled = true;
+      guestBtn.disabled = true;
       return;
     }
 
-    // ── 2. Verify config ──────────────────────────────
+    /* ── 2. Config check ────────────────────────────────── */
     const cfg = window.MODATORIAL_FIREBASE;
     if (!cfg || !cfg.apiKey || String(cfg.apiKey).indexOf('YOUR_') === 0) {
       showWarn(
@@ -173,10 +232,11 @@
         '<em>Firebase Console → Project Settings → Your apps</em>.'
       );
       submit.disabled = true;
+      guestBtn.disabled = true;
       return;
     }
 
-    // ── 3. Initialize Firebase (idempotent) ───────────
+    /* ── 3. Init Firebase (idempotent) ──────────────────── */
     let auth, db;
     try {
       if (!firebase.apps || !firebase.apps.length) {
@@ -190,10 +250,11 @@
     } catch (e) {
       showWarn('❌ Firebase failed to initialize: ' + e.message);
       submit.disabled = true;
+      guestBtn.disabled = true;
       return;
     }
 
-    // ── 4. Redirect if already signed in ──────────────
+    /* ── 4. Redirect if already signed in ───────────────── */
     const next = new URLSearchParams(location.search).get('next') || 'game.html';
     auth.onAuthStateChanged(user => {
       if (user) {
@@ -202,24 +263,203 @@
       }
     });
 
-    // ── 5. Password visibility toggle ─────────────────
-    const pwInput = $('password');
+    /* ── 5. Password visibility toggle ──────────────────── */
     $('pwToggle').addEventListener('click', () => {
       const isPw = pwInput.type === 'password';
       pwInput.type = isPw ? 'text' : 'password';
       $('pwToggle').textContent = isPw ? '🙈' : '👁';
     });
 
-    // ── 6. Form submit ────────────────────────────────
+    /* ── 6. Detect "guest" in the email box ─────────────── */
+    function isGuestInput(raw) {
+      const v = String(raw || '')
+        .trim()
+        .replace(/^["']|["']$/g, '')
+        .toLowerCase();
+      return v === 'guest' || v === 'guest account' || v === 'guestaccount';
+    }
+
+    function applyGuestUI() {
+      const isGuest = isGuestInput(emailEl.value);
+      if (isGuest) {
+        /* Hide the entire password row — user never sees it */
+        pwRow.classList.add('hidden');
+        pwInput.required = false;
+        pwInput.value = '';
+        guestBan.style.display = 'block';
+        submit.textContent = 'Enter as Guest';
+        submit.style.background = '#6366F1';
+      } else {
+        pwRow.classList.remove('hidden');
+        pwInput.required = true;
+        pwInput.placeholder = 'Your password';
+        guestBan.style.display = 'none';
+        submit.textContent = 'Sign in';
+        submit.style.background = '';
+      }
+    }
+    emailEl.addEventListener('input', applyGuestUI);
+    applyGuestUI();
+
+    /* ── 7. Guest sign-in / auto-create flow ────────────── */
+    async function ensureGuestAccount() {
+      /* 7a. Try existing shared account */
+      try {
+        const cred = await auth.signInWithEmailAndPassword(GUEST_EMAIL, GUEST_PASSWORD);
+        console.log('[Login] Guest account signed in');
+        await ensureGuestProfile(cred.user.uid);
+        return cred.user;
+      } catch (signInErr) {
+        const code = String(signInErr.code || '');
+
+        /* Only try to create if the account genuinely doesn't exist */
+        const mayCreate =
+          code.includes('user-not-found') ||
+          code.includes('invalid-login-credentials') ||
+          code.includes('invalid-credential');
+
+        if (!mayCreate) throw signInErr;
+
+        /* 7b. First guest ever — create the shared account */
+        console.log('[Login] Creating shared guest account…');
+        let cred;
+        try {
+          cred = await auth.createUserWithEmailAndPassword(GUEST_EMAIL, GUEST_PASSWORD);
+        } catch (createErr) {
+          if (String(createErr.code || '').includes('email-already-in-use')) {
+            throw new Error(
+              'Guest account exists but its password was changed. ' +
+              'Contact an admin to reset it.'
+            );
+          }
+          throw createErr;
+        }
+
+        const uid = cred.user.uid;
+
+        /* 7c. Reserve the "guest" username */
+        try {
+          const unameRef = db.collection('usernames').doc(GUEST_USERNAME);
+          const unameSnap = await unameRef.get();
+          if (!unameSnap.exists) {
+            await unameRef.set({
+              uid,
+              username: GUEST_USERNAME,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('[Login] Reserved @guest username');
+          }
+        } catch (e) {
+          console.warn('[Login] Username reservation failed (non-fatal):', e);
+        }
+
+        /* 7d. Write shared profile */
+        try {
+          await db.collection('users').doc(uid).set({
+            uid,
+            email: GUEST_EMAIL,
+            username: GUEST_USERNAME,
+            usernameDisplay: GUEST_DISPLAY,
+            displayName: GUEST_DISPLAY,
+            photoURL: null,
+            phone: null,
+            bio: 'Shared guest account — anyone can use this.',
+            isGuest: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+          console.log('[Login] Guest profile written');
+        } catch (e) {
+          console.warn('[Login] Profile write failed (non-fatal):', e);
+        }
+
+        return cred.user;
+      }
+    }
+
+    async function ensureGuestProfile(uid) {
+      try {
+        const snap = await db.collection('users').doc(uid).get();
+        if (!snap.exists) {
+          await db.collection('users').doc(uid).set({
+            uid,
+            email: GUEST_EMAIL,
+            username: GUEST_USERNAME,
+            usernameDisplay: GUEST_DISPLAY,
+            displayName: GUEST_DISPLAY,
+            photoURL: null,
+            phone: null,
+            bio: 'Shared guest account — anyone can use this.',
+            isGuest: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+      } catch (e) {
+        console.warn('[Login] ensureGuestProfile failed (non-fatal):', e);
+      }
+    }
+
+    /* ── 8. Shared "sign in as guest" routine ───────────── */
+    async function signInAsGuest() {
+      submit.disabled = true;
+      guestBtn.disabled = true;
+      const oldSubmitLabel = submit.textContent;
+      const oldGuestLabel  = guestBtn.textContent;
+
+      submit.textContent = 'Entering…';
+      guestBtn.textContent = '⏳ Entering as guest…';
+      clearMsg();
+      showInfo('🔓 Signing into the shared guest account…');
+
+      try {
+        const remember = $('remember').checked;
+        const Persistence = firebase.auth.Auth.Persistence;
+        await auth.setPersistence(remember ? Persistence.LOCAL : Persistence.SESSION);
+
+        await ensureGuestAccount();
+
+        showSuccess('✅ Signed in as guest! Redirecting…');
+        setTimeout(() => location.replace(next), 500);
+      } catch (err) {
+        console.error('[Login guest]', err);
+        const code = err.code || '';
+        let friendly = err.message || String(err);
+        if (code.includes('operation-not-allowed'))
+          friendly = 'Email/Password sign-in is not enabled in Firebase Console.';
+        else if (code.includes('permission-denied'))
+          friendly = 'Firestore rejected the profile write. Check your rules.';
+        else if (code.includes('network'))
+          friendly = 'Network error — check your connection.';
+        showError('❌ ' + friendly);
+        submit.disabled = false;
+        guestBtn.disabled = false;
+        submit.textContent = oldSubmitLabel;
+        guestBtn.textContent = oldGuestLabel;
+      }
+    }
+
+    /* ── 9. Form submit ─────────────────────────────────── */
     $('loginForm').addEventListener('submit', async e => {
       e.preventDefault();
       clearMsg();
 
-      const email    = $('email').value.trim();
+      const email = emailEl.value.trim();
       const password = pwInput.value;
+      const guestMode = isGuestInput(email);
 
-      if (!email || !password) {
-        return showError('Please fill in both email and password.');
+      if (!email) {
+        return showError('Please enter your email (or click "Continue as Guest").');
+      }
+
+      /* ── Guest path via the form ── */
+      if (guestMode) {
+        return signInAsGuest();
+      }
+
+      /* ── Normal login path ── */
+      if (!password) {
+        return showError('Please enter your password.');
       }
 
       submit.disabled = true;
@@ -227,13 +467,16 @@
       submit.textContent = 'Signing in…';
 
       try {
+        const remember = $('remember').checked;
+        const Persistence = firebase.auth.Auth.Persistence;
+        await auth.setPersistence(remember ? Persistence.LOCAL : Persistence.SESSION);
         await auth.signInWithEmailAndPassword(email, password);
         showSuccess('✅ Signed in! Redirecting…');
-        setTimeout(() => location.replace(next), 400);
+        setTimeout(() => location.replace(next), 500);
       } catch (err) {
         console.error('[Login]', err);
         const code = err.code || '';
-        let friendly = err.message;
+        let friendly = err.message || String(err);
         if (code.includes('user-not-found'))
           friendly = 'No account found for that email.';
         else if (code.includes('wrong-password') || code.includes('invalid-credential'))
@@ -253,16 +496,37 @@
       }
     });
 
-    // ── 7. Forgot password ────────────────────────────
+    /* ── 10. Dedicated "Continue as Guest" button ───────── */
+    guestBtn.addEventListener('click', () => {
+      /* Ignore if the user typed a real email — that would be confusing */
+      const typed = emailEl.value.trim();
+      if (typed && !isGuestInput(typed)) {
+        if (!confirm('You typed an email. Continue as guest instead?\n\n' +
+                     'Your typed email will be cleared.')) return;
+        emailEl.value = '';
+        applyGuestUI();
+      }
+      /* Make sure the UI reflects guest mode */
+      emailEl.value = 'guest';
+      applyGuestUI();
+      signInAsGuest();
+    });
+
+    /* ── 11. Forgot password ────────────────────────────── */
     $('forgot').addEventListener('click', async e => {
       e.preventDefault();
-      const email = $('email').value.trim();
-      if (!email) return showError('Enter your email above, then click "Forgot password?".');
+      const email = emailEl.value.trim();
+      if (isGuestInput(email)) {
+        return showError('Guest mode has no password — just click "Continue as Guest".');
+      }
+      if (!email) {
+        return showError('Enter your email above, then click "Forgot password?".');
+      }
       try {
         await auth.sendPasswordResetEmail(email);
         showSuccess('📧 Password reset email sent to ' + email);
       } catch (err) {
-        showError('❌ ' + err.message);
+        showError('❌ ' + (err.message || err));
       }
     });
   })();

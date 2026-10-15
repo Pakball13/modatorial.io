@@ -123,13 +123,13 @@ html, body {
 }
 
 #menu button {
-  background: linear-gradient(180deg, rgba(0,110,0,0.94) 0%, rgba(0,70,0,0.94) 100%);
+  background: linear-gradient(180deg, rgba(16,185,129,0.96) 0%, rgba(5,150,105,0.96) 100%);
   color: #fff;
-  border: 2px solid #fff;
+  border: 1px solid #00F5D4;
   padding: 15px 34px;
   font: 600 17px system-ui;
   letter-spacing: 0.5px;
-  border-radius: 4px;
+  border-radius: 14px;
   cursor: pointer;
   min-width: 240px;
   transition: all 0.15s;
@@ -137,12 +137,13 @@ html, body {
   box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 #menu button:hover {
-  background: linear-gradient(180deg, rgba(0,170,0,0.95) 0%, rgba(0,100,0,0.95) 100%);
+  background: linear-gradient(180deg, rgba(52,211,153,0.98) 0%, rgba(16,185,129,0.98) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,180,0,0.35), 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: 0 8px 28px rgba(0,245,212,0.22), 0 0 0 1px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 #menu button.secondary {
   background: linear-gradient(180deg, rgba(40,40,45,0.92) 0%, rgba(22,22,26,0.92) 100%);
+  border-radius: 14px;
 }
 #menu button.secondary:hover {
   background: linear-gradient(180deg, rgba(70,70,78,0.95) 0%, rgba(40,40,48,0.95) 100%);
@@ -255,4 +256,99 @@ html, body {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 12px;
+}
+
+#modal-panorama-fallback {
+  z-index: 300;
+  background: rgba(4, 10, 20, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+#modal-panorama-fallback .pano-fallback-inner {
+  max-width: 480px;
+  padding: 28px;
+  border-color: rgba(0, 245, 212, 0.42);
+  background: linear-gradient(155deg, #1e293b 0%, #0f172a 70%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.72), 0 0 36px rgba(0, 245, 212, 0.1);
+}
+.pano-fallback-inner h2 {
+  margin-bottom: 10px;
+  border-color: rgba(0, 245, 212, 0.2);
+}
+.pano-fallback-inner p {
+  color: #b8c5d5;
+  margin: 0 0 18px;
+}
+.pano-fallback-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.pano-fallback-options button,
+.pano-gradient-choice > button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 245, 212, 0.42);
+  border-radius: 12px;
+  background: rgba(0, 245, 212, 0.09);
+  color: #e6edf3;
+  font: 600 14px system-ui, sans-serif;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.pano-fallback-options button:hover,
+.pano-gradient-choice > button:hover {
+  transform: translateY(-2px);
+  border-color: #00F5D4;
+  background: rgba(0, 245, 212, 0.16);
+  box-shadow: 0 8px 22px rgba(0, 245, 212, 0.12);
+}
+.pano-gradient-choice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: rgba(8, 15, 28, 0.62);
+}
+.pano-gradient-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b8c5d5;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pano-gradient-choice label span {
+  display: flex;
+  padding: 3px;
+  border: 1px solid rgba(0, 245, 212, 0.35);
+  border-radius: 8px;
+  background: #0b1220;
+}
+.pano-gradient-choice input[type="color"] {
+  width: 27px;
+  height: 25px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+.pano-gradient-choice > button {
+  min-height: 38px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .pano-gradient-choice { grid-template-columns: 1fr; }
+  .pano-gradient-choice > button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #menu button,
+  .pano-fallback-options button,
+  .pano-gradient-choice > button { transition: none; }
 }

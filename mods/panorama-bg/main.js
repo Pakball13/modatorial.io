@@ -2,7 +2,7 @@
  * Panorama Background  v1.0.0
  *  • Loads a user image (png/jpg/webp/exr)
  *  • OR uses the game's own map as a scrolling panorama
- *  • OR falls back to a procedural starfield
+ *  • Offers saved black, white, or custom-gradient fallback choices
  *  • Draws INSIDE the menu render pass so nothing covers it
  * ============================================================ */
 
@@ -13,6 +13,7 @@ let cropBand = 0.30;       // fraction of source height to use
 
 let targetX  = 0;          // smoothed mouse X (0..1)
 let currentX = 0.5;
+const FALLBACK_KEY = 'tt-pano-fallback';
 
 /* ============================================================
  * INPUT
@@ -20,34 +21,121 @@ let currentX = 0.5;
 api.addHook('mouseMove', e => { targetX = e.clientX / window.innerWidth; });
 api.addHook('mouseDown', e => { targetX = e.clientX / window.innerWidth; });
 
-/* ============================================================
- * FALLBACK: PROCEDURAL STARFIELD
- * ============================================================ */
-function makeFallbackPano(W, H) {
+function makeFallbackPano(W, H, choice) {
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const g = c.getContext('2d');
-  const sky = g.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0.0, '#0a0a1a');
-  sky.addColorStop(0.6, '#1a1a3a');
-  sky.addColorStop(1.0, '#3a1a4a');
-  g.fillStyle = sky; g.fillRect(0, 0, W, H);
-  for (let i = 0; i < 500; i++) {
-    g.fillStyle = `rgba(255,255,255,${Math.random() * 0.7 + 0.3})`;
-    g.beginPath();
-    g.arc(Math.random() * W, Math.random() * H * 0.65, Math.random() * 1.4 + 0.3, 0, Math.PI * 2);
-    g.fill();
+  if (choice.type === 'black' || choice.type === 'white') {
+    g.fillStyle = choice.type === 'black' ? '#000000' : '#ffffff';
+    g.fillRect(0, 0, W, H);
+  } else {
+    const gradient = g.createLinearGradient(0, 0, W, H);
+    gradient.addColorStop(0, choice.start);
+    gradient.addColorStop(1, choice.end);
+    g.fillStyle = gradient;
+    g.fillRect(0, 0, W, H);
   }
-  g.fillStyle = '#0a0a12';
-  g.beginPath();
-  g.moveTo(0, H);
-  for (let x = 0; x <= W; x += 10) {
-    g.lineTo(x, H - 180 - Math.sin(x / 320) * 90 - Math.sin(x / 80) * 30);
-  }
-  g.lineTo(W, H);
-  g.closePath();
-  g.fill();
   return c;
+}
+
+function readFallbackChoice() {
+  try {
+    const choice = JSON.parse(localStorage.getItem(FALLBACK_KEY) || 'null');
+    if (!choice || !['black', 'white', 'gradient', 'map'].includes(choice.type)) return null;
+    if (choice.type === 'gradient' &&
+        (!/^#[\da-f]{6}$/i.test(choice.start) || !/^#[\da-f]{6}$/i.test(choice.end))) return null;
+    return choice;
+  } catch (error) {
+    api.warn('Could not read saved panorama choice:', error);
+    return null;
+  }
+}
+
+function createFallbackPano(choice) {
+  pano = makeFallbackPano(2048, 512, choice);
+  panoPath = choice.type === 'gradient' ? '<custom gradient>' : `<${choice.type}>`;
+  api.showToast(`🌄 Panorama: ${panoPath}`, 2500);
+}
+
+async function chooseFallbackPano() {
+  const saved = readFallbackChoice();
+  if (saved && saved.type !== 'map') {
+    createFallbackPano(saved);
+    return true;
+  }
+  if (saved && saved.type === 'map') {
+    const map = await tryCaptureGameMap(6000);
+    if (map) {
+      pano = map;
+      panoPath = '<game map>';
+      return true;
+    }
+    try { localStorage.removeItem(FALLBACK_KEY); }
+    catch (error) { api.warn('Could not clear unavailable game-map choice:', error); }
+  }
+
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.id = 'tt-pano-picker';
+    overlay.dataset.ttOur = '1';
+    overlay.innerHTML =
+      '<div class="tt-pano-panel" role="dialog" aria-modal="true" aria-labelledby="tt-pano-title">' +
+        '<h2 id="tt-pano-title">🌌 Choose a panorama</h2>' +
+        '<p>No panorama image was found. Pick a background for your game menu.</p>' +
+        '<div class="tt-pano-options">' +
+          '<button type="button" data-pano-choice="black">Black</button>' +
+          '<button type="button" data-pano-choice="white">White</button>' +
+          '<button type="button" data-pano-choice="map">Use game map</button>' +
+        '</div>' +
+        '<div class="tt-pano-gradient">' +
+          '<label>Custom gradient <input type="color" data-gradient-start value="#0f172a" aria-label="Gradient start color">' +
+          '<input type="color" data-gradient-end value="#00f5d4" aria-label="Gradient end color"></label>' +
+          '<button type="button" data-pano-choice="gradient">Apply gradient</button>' +
+        '</div>' +
+        '<div class="tt-pano-error" aria-live="polite"></div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+
+    const error = overlay.querySelector('.tt-pano-error');
+    const buttons = [...overlay.querySelectorAll('[data-pano-choice]')];
+    let busy = false;
+    buttons.forEach(button => button.addEventListener('click', async () => {
+      if (busy) return;
+      const type = button.dataset.panoChoice;
+      if (type === 'map') {
+        busy = true;
+        buttons.forEach(item => { item.disabled = true; });
+        error.textContent = 'Waiting for the game map…';
+        const map = await tryCaptureGameMap(6000);
+        if (!map) {
+          error.textContent = 'The game map is not ready yet. Choose a color or try again.';
+          busy = false;
+          buttons.forEach(item => { item.disabled = false; });
+          return;
+        }
+        try { localStorage.setItem(FALLBACK_KEY, JSON.stringify({ type: 'map' })); }
+        catch (storageError) { api.warn('Could not save game-map choice:', storageError); }
+        pano = map;
+        panoPath = '<game map>';
+      } else if (type === 'gradient') {
+        const start = overlay.querySelector('[data-gradient-start]').value;
+        const end = overlay.querySelector('[data-gradient-end]').value;
+        const choice = { type, start, end };
+        try { localStorage.setItem(FALLBACK_KEY, JSON.stringify(choice)); }
+        catch (storageError) { api.warn('Could not save gradient choice:', storageError); }
+        createFallbackPano(choice);
+      } else {
+        const choice = { type };
+        try { localStorage.setItem(FALLBACK_KEY, JSON.stringify(choice)); }
+        catch (storageError) { api.warn('Could not save panorama choice:', storageError); }
+        createFallbackPano(choice);
+      }
+
+      overlay.remove();
+      resolve(true);
+    }));
+    buttons[0].focus();
+  });
 }
 
 /* ============================================================
@@ -146,22 +234,9 @@ async function loadPanorama() {
     }
   } catch (e) { api.warn('EXR load failed:', e); }
 
-  /* ---- 3. Game's own map ---- */
-  api.log('🎬 Trying to capture game map…');
-  const mapCap = await tryCaptureGameMap(6000);
-  if (mapCap) {
-    pano = mapCap;
-    panoPath = '<game map>';
-    api.showToast('🎬 Using game map as panorama', 2500);
-    return true;
-  }
-
-  /* ---- 4. Procedural fallback ---- */
-  api.warn('No image found. Using procedural placeholder.');
-  pano = makeFallbackPano(4096, 1024);
-  panoPath = '<procedural>';
-  api.showToast('🌄 Panorama: procedural placeholder', 2500);
-  return false;
+  /* ---- 3. User-selected fallback ---- */
+  api.warn('No panorama image found. Waiting for a fallback choice.');
+  return chooseFallbackPano();
 }
 
 loadPanorama();
@@ -202,8 +277,10 @@ api.setMenuBackground((g, W, H) => {
   g.imageSmoothingEnabled = true;
   g.drawImage(pano, 0, bandY0, pano.width, bandH, -scrollX, offsetY, drawW, drawH);
   /* Dim overlay so UI is readable */
-  g.fillStyle = 'rgba(0,0,0,0.35)';
-  g.fillRect(0, 0, W, H);
+  if (panoPath !== '<white>') {
+    g.fillStyle = 'rgba(0,0,0,0.35)';
+    g.fillRect(0, 0, W, H);
+  }
   g.restore();
 });
 
