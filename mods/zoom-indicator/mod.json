@@ -1,0 +1,8 @@
+{
+  "name": "Zoom-Level Indicator",
+  "version": "1.0.0",
+  "author": "Modatorial Team",
+  "description": "Shows the current zoom percentage and camera coordinates in a corner chip.",
+  "gameVersion": 25,
+  "main": "main.js"
+}

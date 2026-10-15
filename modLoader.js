@@ -1,7 +1,10 @@
 /* ============================================================
- * Territorial.io Mod Loader  v1.10.2
+ * Territorial.io Mod Loader  v1.11.0
  * Full client: sidebar, themes, layouts, mod menu, settings,
  * promo integration, store + appearance buttons
+ *
+ * v1.11.0 — Multiplayer is now visible by default.
+ *           offlineMode persists across reloads + has UI toggle.
  * ============================================================ */
 (function (global) {
   'use strict';
@@ -35,7 +38,7 @@
     'Name':            ICON_DIR + 'name.svg'
   };
 
- const THEMES = ['modatorial', 'midnight', 'cyberpunk', 'forest', 'mono', 'sunset', 'raw']; 
+  const THEMES = ['modatorial', 'midnight', 'cyberpunk', 'forest', 'mono', 'sunset'];
   function applyTheme(name) {
     if (!THEMES.includes(name)) name = 'midnight';
     document.documentElement.setAttribute('data-tt-theme', name);
@@ -147,14 +150,15 @@
     catch (e) { warn('Could not persist imported bundles:', e); }
   }
 
+  /* ── CLIENT flags — defaults are now VISIBLE for everything ── */
   const CLIENT = {
     layout:           localStorage.getItem(LAYOUT_KEY) || 'sidebar',
     sidebarCollapsed: localStorage.getItem(SIDEBAR_KEY) === '1',
-    chrome:           localStorage.getItem('tt-chrome') !== '0',
-    hideMenuButtons:  localStorage.getItem('tt-hidemenu') !== '0',
-    hideLogo:         localStorage.getItem('tt-hidelogo') !== '0',
-    hideVersion:      localStorage.getItem('tt-hideversion') !== '0',
-    hideMultiplayer:  localStorage.getItem('tt-hidemulti') !== '0'
+    chrome:           localStorage.getItem('tt-chrome') === '1',        // hidden only if '1'
+    hideMenuButtons:  localStorage.getItem('tt-hidemenu') === '1',
+    hideLogo:         localStorage.getItem('tt-hidelogo') === '1',
+    hideVersion:      localStorage.getItem('tt-hideversion') === '1',
+    hideMultiplayer:  localStorage.getItem('tt-hidemulti') === '1'
   };
 
   function loadSettingsFromStorage(modId, schema) {
@@ -302,9 +306,13 @@
   }
 
   const API = {
-    version: '1.10.2',
+    version: '1.11.0',
     gameVersion: 25,
     getGame() { return window.__TT__ || null; },
+
+    /* ── offline mode persists across reloads (default: ON) ── */
+    offlineMode: localStorage.getItem('tt-offline-mode') !== '0',
+
     on, off, emit, addHook, mods,
     log, warn, error: err,
 
@@ -411,6 +419,17 @@
     },
     resetModState() { localStorage.removeItem(DISABLED_KEY); location.reload(); },
     reloadPage() { location.reload(); },
+
+    /* ── offline mode helpers ─────────────────────────────── */
+    setOfflineMode(on) {
+      API.offlineMode = !!on;
+      localStorage.setItem('tt-offline-mode', on ? '1' : '0');
+      API.showToast(on
+        ? '🔌 Offline — connections to territorial.io blocked'
+        : '🌐 Online — reload and click Multiplayer to connect');
+      return API.offlineMode;
+    },
+    getOfflineMode() { return API.offlineMode; },
 
     setSidebarCollapsed(on) {
       CLIENT.sidebarCollapsed = !!on;
@@ -636,7 +655,6 @@
   WSProxy.CLOSING = OrigWS.CLOSING;
   WSProxy.CLOSED = OrigWS.CLOSED;
   global.WebSocket = WSProxy;
-  API.offlineMode = true;
   API.blockedHosts = BLOCKED_HOSTS;
 
   const origRAF = global.requestAnimationFrame.bind(global);
@@ -844,6 +862,7 @@
   function getMainMenuButtons() {
     const out = [];
     for (const b of document.querySelectorAll('body > button')) {
+      if (b.dataset.ttColorButton === '1') continue;
       if (isOurMenuButton(b) || isUntouchedGameButton(b)) out.push(b);
     }
     return out;
@@ -859,12 +878,24 @@
       }
     });
   }
+  let cachedColorBtn = null;
   function getColorButton() {
+    if (cachedColorBtn && document.body.contains(cachedColorBtn)) {
+      return cachedColorBtn;
+    }
+    cachedColorBtn = null;
+
     for (const b of document.querySelectorAll('body > button')) {
       if (b.parentElement !== document.body) continue;
       if (isOurButton(b)) continue;
       if (b.id === MODS_BTN_ID) continue;
       if (b.hasAttribute('hidden')) continue;
+
+      if (b.dataset.ttColorButton === '1') {
+        cachedColorBtn = b;
+        return b;
+      }
+
       if (isOurMenuButton(b) || isUntouchedGameButton(b)) continue;
       const html = b.innerHTML || '';
       if (html.includes('<br>')) continue;
@@ -874,6 +905,7 @@
       b.dataset.ttColorButton = '1';
       b.setAttribute('aria-label', 'Change player color');
       b.title = 'Change player color';
+      cachedColorBtn = b;
       return b;
     }
     return null;
@@ -916,8 +948,6 @@
       for (const [key, path] of Object.entries(ICONS)) {
         if (label.toLowerCase().includes(key.toLowerCase())) { iconPath = path; break; }
       }
-      /* Fallback mapping for our injected buttons when the label
-         match above doesn't find them */
       if (!iconPath) {
         if (btn.id === 'tt-mods-btn')       iconPath = ICONS['Mods'];
         else if (btn.id === 'tt-store-btn') iconPath = ICONS['Mod Store'];
@@ -976,15 +1006,13 @@
       const rows   = all.length + (hasTopRow && !collapsed ? 1 : 0);
       const gap    = 10;
 
-      // ---- Dynamic row height: fit within the viewport ----
-      const topMargin    = 50;   // space for the chrome bar
-      const bottomMargin = 40;   // space for the bottom status bar
+      const topMargin    = 50;
+      const bottomMargin = 40;
       const available    = vh - topMargin - bottomMargin;
       const idealRowH    = 60;
       const neededH      = rows * idealRowH + (rows - 1) * gap;
       let rowH = idealRowH;
       if (neededH > available) {
-        // Shrink rows to fit
         rowH = Math.max(36, Math.floor((available - (rows - 1) * gap) / rows));
       }
 
@@ -1184,6 +1212,20 @@
 
     const modsBtn = mkBtn('🔧 Mods', 'Open mod menu (F10)', () => showMenu());
 
+    /* ── NEW: Offline / Online toggle ─────────────────────── */
+    const offlineBtn = mkBtn(
+      API.offlineMode ? '🔌 Offline' : '🌐 Online',
+      'Toggle connections to territorial.io servers',
+      () => {
+        const next = !API.offlineMode;
+        API.setOfflineMode(next);
+        offlineBtn.textContent = next ? '🔌 Offline' : '🌐 Online';
+        if (!next) {
+          API.showToast('🌐 Online — reload the page, then click Multiplayer', 4000);
+        }
+      }
+    );
+
     const muteBtn = mkBtn(
       (window.TerritorialSounds && window.TerritorialSounds.isMuted()) ? '🔇' : '🔊',
       'Mute / unmute audio',
@@ -1201,7 +1243,7 @@
 
     el.append(brand, spacer);
     if (sidebarBtn) el.appendChild(sidebarBtn);
-    el.append(layoutBtn, themeBtn, storeBtn, modsBtn, muteBtn, hideBtn);
+    el.append(layoutBtn, themeBtn, storeBtn, modsBtn, offlineBtn, muteBtn, hideBtn);
     return el;
   }
   function updateChrome() {
@@ -1562,7 +1604,6 @@
   }
 
   async function registerImportedMod(bundle) {
-    // Skip if this mod is already registered
     if (mods.has(bundle.id)) {
       log(`⏸ Already loaded, skipping: ${bundle.id}`);
       return mods.get(bundle.id);
@@ -1641,12 +1682,6 @@
     return out;
   }
 
-  const MODS_BG_BASE  = 'linear-gradient(180deg,rgba(0,110,0,0.92) 0%,rgba(0,70,0,0.92) 100%)';
-  const MODS_BG_HOVER = 'linear-gradient(180deg,rgba(0,160,0,0.95) 0%,rgba(0,90,0,0.95) 100%)';
-
-  /* ============================================================
-   * Modatorial palette — used for the three injected buttons
-   * ============================================================ */
   const PALETTE = {
     mods:       { base: 'linear-gradient(180deg,#10B981 0%,#059669 100%)',
                   hover:'linear-gradient(180deg,#34d399 0%,#10B981 100%)',
@@ -1719,9 +1754,6 @@
     }, PALETTE.appearance);
   }
 
-  /* ============================================================
-   * Color the game's own menu buttons with the Modatorial palette
-   * ============================================================ */
   const MENU_BTN_COLORS = {
     'Custom Scenario': { base: 'linear-gradient(145deg,var(--tt-accent-2,#6366F1),var(--tt-bg,#0F172A))',
                          hover:'linear-gradient(145deg,var(--tt-accent,#00F5D4),var(--tt-accent-2,#6366F1))',
@@ -1731,12 +1763,16 @@
                          border:'var(--tt-accent,#00F5D4)' },
     'Game Menu':       { base: 'linear-gradient(145deg,var(--tt-card,#1E293B),var(--tt-bg,#0F172A))',
                          hover:'linear-gradient(145deg,var(--tt-border,#0284C7),var(--tt-card,#1E293B))',
-                         border:'var(--tt-border,#0284C7)' }
+                         border:'var(--tt-border,#0284C7)' },
+    'Multiplayer':     { base: 'linear-gradient(145deg,#0a8a0a,#046f04)',
+                         hover:'linear-gradient(145deg,#10b810,#059669)',
+                         border:'#00F5D4' }
   };
 
   function colorGameMenuButtons() {
     document.querySelectorAll('body > button').forEach(btn => {
       if (btn.dataset.ttOur === '1') return;
+      if (btn.dataset.ttColorButton === '1') return;
       if (btn.dataset.ttMenuBtn !== '1' && btn.dataset.ttIconApplied !== '1') return;
 
       const label = btn.dataset.ttLabel
@@ -1787,6 +1823,7 @@
     log(`Disabled at boot: [${[...disabledMods].join(', ') || 'empty'}]`);
     log(`Layout: ${CLIENT.layout}${CLIENT.layout === 'sidebar' ? (CLIENT.sidebarCollapsed ? ' (collapsed)' : '') : ''}`);
     log(`Theme: ${API.getTheme()}`);
+    log(`Offline mode: ${API.offlineMode ? 'ON' : 'OFF (connections allowed)'}`);
 
     if (!document.getElementById('tt-client-css')) {
       const link = document.createElement('link');
@@ -1802,6 +1839,7 @@
       document.addEventListener('click', e => {
         const btn = e.target.closest('body > button[data-tt-menu-btn="1"]');
         if (!btn) return;
+        if (btn.dataset.ttColorButton === '1') return;
         const rect = btn.getBoundingClientRect();
         const size = Math.max(rect.width, rect.height) * 0.55;
         const x = e.clientX - rect.left - size / 2;
@@ -1820,6 +1858,7 @@
       document.addEventListener('mousemove', e => {
         const btn = e.target.closest('body > button[data-tt-menu-btn="1"]');
         if (!btn) return;
+        if (btn.dataset.ttColorButton === '1') return;
         const rect = btn.getBoundingClientRect();
         const xPct = ((e.clientX - rect.left) / rect.width)  * 100;
         const yPct = ((e.clientY - rect.top)  / rect.height) * 100;

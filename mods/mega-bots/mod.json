@@ -1,0 +1,12 @@
+{
+  "name": "Mega Bots",
+  "version": "1.0.0",
+  "author": "Modatorial Team",
+  "description": "Experimental: raises the player cap above 512. Some bots may behave oddly. Disable if the game breaks.",
+  "gameVersion": 25,
+  "main": "main.js",
+  "settings": [
+    { "id": "total",   "label": "Total players (bots + human)", "type": "slider", "min": 128, "max": 1024, "step": 64, "default": 1024 },
+    { "id": "enabled", "label": "Enabled",                      "type": "toggle", "default": true }
+  ]
+}

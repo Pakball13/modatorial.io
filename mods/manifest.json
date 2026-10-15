@@ -2,6 +2,11 @@
   "mods": [
     "example-mod",
     "panorama-bg",
-    "infinite-interest"
+    "infinite-interest",
+    "zoom-indicator",
+    "grid-overlay",
+    "damage-popups",
+    "cinematic-mode",
+    "mega-bots"
   ]
 }
